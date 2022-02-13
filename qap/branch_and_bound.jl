@@ -1,5 +1,7 @@
 import Random
 
+include("hungarian.jl")
+
 const RAND_MAX = 2147483647
 
 mutable struct QAPBranch
@@ -26,6 +28,12 @@ function generate_initial_solution(qap_branch::QAPBranch)
                 qap_branch.f_mat[qap_branch.current_best_solution[i], qap_branch.current_best_solution[j]] * qap_branch.d_mat[i,j]
         end
     end
+end
+
+function solve(qap_branch::QAPBranch)
+    current_solution = Vector{Int64}(undef,qap_branch.n)
+    already_in_solution = fill(false, qap_branch.n)
+    las_vegas_recursive_search_tree_exploring(qap_branch, 0, 0, current_solution, already_in_solution)
 end
 
 function calculate_total_nodes(qap_branch::QAPBranch)
@@ -149,8 +157,8 @@ function las_vegas_recursive_search_tree_exploring(
                 if !already_in_solution[i+1]
                     cost_increase = 0
                     for j in 0:current_solution_size-1
-                        cost_increase += qap_branch.d_mat[j+1][current_solution_size+1]*qap_branch.f_mat[current_solution[j+1]+1][i+1]
-                                    + qap_branch.d_mat[current_solution_size+1][j+1]*qap_branch.f_mat[i+1][current_solution[j+1]+1]
+                        cost_increase += qap_branch.d_mat[j+1, current_solution_size+1]*qap_branch.f_mat[current_solution[j+1]+1, i+1]
+                                    + qap_branch.d_mat[current_solution_size+1, j+1]*qap_branch.f_mat[i+1, current_solution[j+1]+1]
                     end
                     push!(cost_increases, Pair(i, cost_increase))
                 end
