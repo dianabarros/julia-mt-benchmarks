@@ -1,4 +1,4 @@
-const INF = 1e8
+const INF = Int64(1e8)
 
 function init_global_variables(n::Int64)
     global N = n
@@ -15,6 +15,7 @@ function init_global_variables(n::Int64)
 end
 
 function add_to_tree(current::Int64, prev::Int64, cost::Matrix{Int64})
+    global S, prev_on_tree, label_x, label_y, slack, slack_causer
     slack_for_new_node = 0
     S[current+1] = true
     prev_on_tree[current+1] = prev
@@ -28,6 +29,7 @@ function add_to_tree(current::Int64, prev::Int64, cost::Matrix{Int64})
 end
 
 function init_labels(cost::Matrix{Int64})
+    global label_x, label_y, N, match_xy, match_yx
     label_y = zeros(Int64, N)
     label_x = fill(-INF, N)
     for i in 0:N-1
@@ -40,6 +42,7 @@ function init_labels(cost::Matrix{Int64})
 end
 
 function update_labels()
+    global N, T, slack, S, label_x, label_y
     delta = INF
     for i in 0:N-1
         if !T[i+1]
@@ -57,6 +60,7 @@ function update_labels()
 end
 
 function augment(cost::Matrix{Int64})
+    global N, max_match, label_x, label_y, match_xy, match_yx, S, T, slack, slack_causer, prev_on_tree
     if max_match == N
         return
     end
@@ -159,7 +163,6 @@ function hungarian_least_cost(n::Int64, matrix::Matrix{Int64})
         end
     end
     init_labels(matrix)
-    # TODO
     augment(matrix)
     cost = 0
     for i in 0:N-1
