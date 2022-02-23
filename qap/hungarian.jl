@@ -86,9 +86,6 @@ function augment(cost::Matrix{Int64})
         slack_causer[i+1] = root
     end
 
-    # CPP
-    # int current;
-	# int i;
     current = 0
     i = 0
 
@@ -96,7 +93,7 @@ function augment(cost::Matrix{Int64})
         while queue_reading < queue_write
             current = bfs_queue[queue_reading+1]
             queue_reading += 1
-            for i in 0:N-1
+            for outer i in 0:N-1
                 if cost[current+1,i+1] == label_x[current+1] + label_y[i+1] && !T[i+1]
                     if match_yx[i+1] == -1
                         break
@@ -114,21 +111,21 @@ function augment(cost::Matrix{Int64})
         if i < N
             break
         end
-    end
-    update_labels()
-    queue_reading = 0
-    queue_write = 0
-    for i in 0:N-1
-        if !T[i+1] && slack[i+1] == 0
-            if match_yx[i+1] == -1
-                current = slack_causer[i+1]
-                break
-            else    
-                T[i+1] = true
-                if !S[match_yx[i+1]+1]
-                    bfs_queue[queue_write+1] = match_yx[i+1]
-                    queue_write += 1
-                    add_to_tree(match_yx[i+1], slack_causer[i+1], cost)
+        update_labels()
+        queue_reading = 0
+        queue_write = 0
+        for outer i in 0:N-1
+            if !T[i+1] && slack[i+1] == 0
+                if match_yx[i+1] == -1
+                    current = slack_causer[i+1]
+                    break
+                else    
+                    T[i+1] = true
+                    if !S[match_yx[i+1]+1]
+                        bfs_queue[queue_write+1] = match_yx[i+1]
+                        queue_write += 1
+                        add_to_tree(match_yx[i+1], slack_causer[i+1], cost)
+                    end
                 end
             end
         end
@@ -138,14 +135,14 @@ function augment(cost::Matrix{Int64})
     end
     if i < N
         max_match += 1
-        # TODO: check wtf
         cx = current
         cy = i
-        while cx != 2
+        while cx != -2
             ty = match_xy[cx+1]
             match_yx[cy+1] = cx
             match_xy[cx+1] = cy
             cx = prev_on_tree[cx+1]
+            cy = ty
         end
         augment(cost)
     end
@@ -154,8 +151,8 @@ end
 function hungarian_least_cost(n::Int64, matrix::Matrix{Int64})
     init_global_variables(n)
     maximum_ = -INF
-    for i in 0:n
-        maximum_ = max(maximum(matrix[i+1:n,:]),maximum_)
+    for i in 0:n-1
+        maximum_ = max(maximum(matrix[i+1,1:n]),maximum_)
     end
     for i in 0:n-1
         for j in 0:n-1
