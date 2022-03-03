@@ -174,9 +174,9 @@ function las_vegas_recursive_search_tree_exploring(
             remaining_facilities = qap_branch.n - current_solution_size
             first_child = 0
             if remaining_facilities > 3
-                first_child = rand(0:RAND_MAX) % (remaining_facilities / 3)
-                tmp = cost_increases[first_child]
-                cost_increases[first_child] = cost_increases[1]
+                first_child = rand(0:RAND_MAX) % div(remaining_facilities, 3)
+                tmp = cost_increases[first_child+1]
+                cost_increases[first_child+1] = cost_increases[1]
                 cost_increases[1] = tmp
             end
             for child in cost_increases
