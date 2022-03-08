@@ -124,10 +124,7 @@ function lower_bound_for_partial_solution(
             g[i+1,j+1] = f_diagonal[i+1] * d_diagonal[j+1] + min_prod[i+1,j+1]
         end
     end
-    @show remaining_facilities
-    @show g
     lap = hungarian_least_cost(remaining_facilities,g)
-    @show lap
 
     return current_partial_cost+lap
 end
@@ -137,11 +134,13 @@ function las_vegas_recursive_search_tree_exploring(
         current_solution::Vector{Int64}, already_in_solution::Vector{Bool}
     )
     qap_branch.number_of_nodes += 1
+    # full solution (leaf): check if it is better than the best already found
     if current_solution_size == qap_branch.n
         if current_cost < qap_branch.current_best_cost
             qap_branch.current_best_cost = current_cost
             qap_branch.current_best_solution = copy(current_solution)
         end
+    # empty partial solution: no need for analyzing solution feasibility
     elseif current_solution_size == 0
         for i in 0:qap_branch.n-1
             current_solution[1] = i
@@ -149,6 +148,7 @@ function las_vegas_recursive_search_tree_exploring(
             las_vegas_recursive_search_tree_exploring(qap_branch, 0, 1, current_solution, already_in_solution)
             already_in_solution[i+1] = false
         end
+    # non-empty partial solution
     else
         lower_bound = 0
         lower_bound_evaluated = false
@@ -157,7 +157,7 @@ function las_vegas_recursive_search_tree_exploring(
             lower_bound_evaluated = true
         end
         if lower_bound_evaluated && lower_bound > qap_branch.current_best_cost
-            qap_branch.nonvisited_solutions[current_solution_size+1]
+            qap_branch.nonvisited_solutions[current_solution_size+1] += 1
             return
         else
             cost_increases = Pair[]
