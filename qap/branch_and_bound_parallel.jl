@@ -5,6 +5,10 @@ include("hungarian.jl")
 
 const RAND_MAX = 2147483647
 
+best_costs = zeros(Int64, Threads.nthreads())
+best_solutions = [Int64[] for _ in 1:Threads.nthreads()]
+tasks = [Task[] for _ in 1:Threads.nthreads()]
+
 mutable struct QAPBranch
     n::Int64
     d_mat::Matrix{Int64}
@@ -61,7 +65,7 @@ function lower_bound_for_partial_solution(
     new_d = Matrix{Int64}(undef, remaining_facilities, remaining_facilities)
     f_diagonal = zeros(Int64,remaining_facilities)
     d_diagonal = zeros(Int64,remaining_facilities)
-
+    
     pointer_row = 0
     for i in partial_solution_size:qap_branch.n-1
         pointer_col = 0
@@ -77,7 +81,7 @@ function lower_bound_for_partial_solution(
         new_d[i-partial_solution_size+1,:] = vcat(partial_sort, new_d[i-partial_solution_size+1,remaining_facilities:end])
         pointer_row += 1
     end
-
+    
     pointer_row = 0
     for i in 0:qap_branch.n-1
         if already_in_solution[i+1]
@@ -98,7 +102,7 @@ function lower_bound_for_partial_solution(
         new_f[pointer_row+1,:] = vcat(partial_sort, new_f[pointer_row+1,remaining_facilities:end])
         pointer_row += 1
     end
-
+    
     min_prod = zeros(Int64, (remaining_facilities, remaining_facilities))
     for i in 0:remaining_facilities-1
         for j in 0:remaining_facilities-1
@@ -114,6 +118,7 @@ function lower_bound_for_partial_solution(
             g[i+1,j+1] = f_diagonal[i+1] * d_diagonal[j+1] + min_prod[i+1,j+1]
         end
     end
+    
     lap = hungarian_least_cost(remaining_facilities,g)
 
     return current_partial_cost+lap
@@ -122,9 +127,11 @@ end
 function generate_initial_solution(
         qap_branch::QAPBranch, current_solution::Vector{Int64}, already_in_solution::Vector{Bool}
     ) 
+    global best_costs, best_solutions, task
     current_best_cost = 0
     current_best_solution = [0:qap_branch.n-1;]
     current_best_solution = Random.shuffle(current_best_solution)
+    # current_best_solution = [0, 3, 2, 1]
     for i in 0:qap_branch.n-1
         for j in 0:qap_branch.n-1
             current_best_cost += qap_branch.f_mat[current_best_solution[i+1]+1, current_best_solution[j+1]+1] * qap_branch.d_mat[i+1,j+1]
@@ -137,20 +144,25 @@ function generate_initial_solution(
             qap_branch::QAPBranch, current_cost::Int64, current_solution_size::Int64,
             current_solution::Vector{Int64}, already_in_solution::Vector{Bool}
         )
+        @show Threads.threadid()
+        global best_costs, best_solutions
         # qap_branch.number_of_nodes += 1 #TODO
         # full solution (leaf): check if it is better than the best already found
         if current_solution_size == qap_branch.n
             if current_cost < best_costs[Threads.threadid()]
+                # println("here")
                 best_costs[Threads.threadid()] = current_cost
                 best_solutions[Threads.threadid()] = copy(current_solution)
             end
         # empty partial solution: no need for analyzing solution feasibility
         elseif current_solution_size == 0
             for i in 0:qap_branch.n-1
-                current_solution[1] = i
-                already_in_solution[i+1] = true
-                Threads.@spawn las_vegas_recursive_search_tree_exploring(qap_branch, 0, 1, current_solution, already_in_solution)
-                already_in_solution[i+1] = false
+                new_solution = deepcopy(current_solution)
+                new_solution[1] = i
+                new_already_in_solution = copy(already_in_solution)
+                new_already_in_solution[i+1] = true
+                spawned_task = Threads.@spawn las_vegas_recursive_search_tree_exploring(qap_branch, 0, 1, new_solution, new_already_in_solution)
+                push!(tasks[Threads.threadid()], spawned_task)
             end
         # non-empty partial solution
         else
@@ -184,18 +196,26 @@ function generate_initial_solution(
                     cost_increases[1] = tmp
                 end
                 for child in cost_increases
-                    current_solution[current_solution_size+1] = child.first
-                    already_in_solution[child.first+1] = true
-                    Threads.@spawn las_vegas_recursive_search_tree_exploring(qap_branch, current_cost + child.second,
-                        current_solution_size+1, current_solution, already_in_solution
+                    new_solution = deepcopy(current_solution)
+                    new_solution[current_solution_size+1] = child.first
+                    new_already_in_solution = copy(already_in_solution)
+                    new_already_in_solution[child.first+1] = true
+                    spawned_task = Threads.@spawn las_vegas_recursive_search_tree_exploring(qap_branch, current_cost + child.second,
+                        current_solution_size+1, new_solution, new_already_in_solution
                         )
-                    already_in_solution[child.first+1] = false
+                    push!(tasks[Threads.threadid()], spawned_task)
                 end
             end
         end
     end
 
     las_vegas_recursive_search_tree_exploring(qap_branch, 0, 0, current_solution, already_in_solution)
+    for thread in tasks
+        for task in thread
+            wait(task)
+        end
+    end
+    @show best_costs
     best_cost = maximum(best_costs)
     best_solution = best_solutions[findfirst(isequal(best_cost), best_costs)]
     return best_cost, best_solution
