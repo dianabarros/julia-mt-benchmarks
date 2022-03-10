@@ -131,7 +131,6 @@ function generate_initial_solution(
     current_best_cost = 0
     current_best_solution = [0:qap_branch.n-1;]
     current_best_solution = Random.shuffle(current_best_solution)
-    # current_best_solution = [0, 3, 2, 1]
     for i in 0:qap_branch.n-1
         for j in 0:qap_branch.n-1
             current_best_cost += qap_branch.f_mat[current_best_solution[i+1]+1, current_best_solution[j+1]+1] * qap_branch.d_mat[i+1,j+1]
@@ -144,7 +143,6 @@ function generate_initial_solution(
             qap_branch::QAPBranch, current_cost::Int64, current_solution_size::Int64,
             current_solution::Vector{Int64}, already_in_solution::Vector{Bool}
         )
-        @show Threads.threadid()
         global best_costs, best_solutions
         # qap_branch.number_of_nodes += 1 #TODO
         # full solution (leaf): check if it is better than the best already found
@@ -215,8 +213,7 @@ function generate_initial_solution(
             wait(task)
         end
     end
-    @show best_costs
-    best_cost = maximum(best_costs)
+    best_cost = minimum(best_costs)
     best_solution = best_solutions[findfirst(isequal(best_cost), best_costs)]
     return best_cost, best_solution
 end
