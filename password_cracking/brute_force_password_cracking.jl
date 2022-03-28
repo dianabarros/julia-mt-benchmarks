@@ -1,4 +1,6 @@
 using MD5
+using FoldsThreads
+using FLoops
 
 const MAX = 10
 
@@ -20,6 +22,23 @@ function brute_force(hash1, str, i, n)
     return false
 end
 
+function brute_force_parallel(hash1, str, i, n)
+    global letters
+    if i == n + 1
+        hash2 = md5(String(str))
+        @show String(str)
+        return hash1 == hash2
+    end
+    @floop DepthFirstEx() for letter in letters 
+        new_str = str
+        new_str[i] = letter 
+        if brute_force(hash1, new_str, i + 1, n)
+            return true
+        end
+    end
+    return false
+end
+
 # hash1_str = "be5d75fa67ef370e98b3d3611c318156"
 
 function crack_password(hash1_str::String)
@@ -28,6 +47,18 @@ function crack_password(hash1_str::String)
     for i in 2:8
         str = fill('\0',i)
         if brute_force(hash1, str, 1, i)
+            break
+        end
+    end
+    return String(str)
+end
+
+function crack_password_parallel(hash1_str::String)
+    hash1 = hex2bytes(hash1_str)
+    str = []
+    for i in 2:8
+        str = fill('\0',i)
+        if brute_force_parallel(hash1, str, 1, i)
             break
         end
     end
