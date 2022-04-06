@@ -1,4 +1,5 @@
 [deps]
+BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 FLoops = "cc61a311-1640-44b5-9fba-1b764f453329"
 FoldsThreads = "9c68100b-dfe1-47cf-94c8-95104e173443"
 MD5 = "6ac74813-4b46-53a4-afec-0b5dc9d7885c"
