@@ -2,11 +2,10 @@ using MD5
 using FoldsThreads
 using FLoops
 using Base.Threads
-using BenchmarkTools
 
-mutable struct BenchmarkResults
+mutable struct BenchmarkSample
     loop_tasks::Vector{Vector{Vector{Int64}}}
-    suite::BenchmarkGroup
+    suite::Dict{String,Tuple}
 end
 
 letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890"
@@ -230,31 +229,31 @@ end
 function debug_brute_force_parallel(hash1::Vector{UInt8}, ex::FoldsThreads.FoldsBase.Executor, loop_tasks, suite)
     lk = ReentrantLock()
     found = nothing
-    suite["loop_1"] = @benchmarkable begin
-        @floop $ex for letter in $letters if isnothing($found)
+    suite["loop_1"] = @timed begin
+        @floop ex for letter in letters if isnothing(found)
             local_str = fill('\0',1)
             local_str[1] = letter
             hash2 = md5(String(local_str))
-            if $hash1 == hash2
-                lock($lk) do
-                    $found = String(local_str)
+            if hash1 == hash2
+                lock(lk) do
+                    found = String(local_str)
                 end
                 break
             end
         end end
     end
 
-    suite["loop_2"] = @benchmarkable begin
-        if isnothing($found)
-            @floop $ex for letter in $letters if isnothing($found)
+    suite["loop_2"] = @timed begin
+        if isnothing(found)
+            @floop ex for letter in letters if isnothing(found)
                 local_str = fill('\0',2)
                 local_str[1] = letter
-                for letter in $letters
+                for letter in letters
                     local_str[2] = letter
                     hash2 = md5(String(local_str))
-                    if $hash1 == hash2
-                        lock($lk) do
-                            $found = String(local_str)
+                    if hash1 == hash2
+                        lock(lk) do
+                            found = String(local_str)
                         end
                         break
                     end
@@ -263,19 +262,19 @@ function debug_brute_force_parallel(hash1::Vector{UInt8}, ex::FoldsThreads.Folds
         end
     end
 
-    suite["loop_3"] = @benchmarkable begin
-        if isnothing($found)
-            @floop $ex for letter in $letters if isnothing($found)
+    suite["loop_3"] = @timed begin
+        if isnothing(found)
+            @floop ex for letter in letters if isnothing(found)
                 local_str = fill('\0',3)
                 local_str[1] = letter
-                for letter in $letters if isnothing($found)
+                for letter in letters if isnothing(found)
                     local_str[2] = letter
-                    for letter in $letters
+                    for letter in letters
                         local_str[3] = letter
                         hash2 = md5(String(local_str))
-                        if $hash1 == hash2
-                            lock($lk) do
-                                $found = String(local_str)
+                        if hash1 == hash2
+                            lock(lk) do
+                                found = String(local_str)
                             end
                             break
                         end
@@ -285,21 +284,21 @@ function debug_brute_force_parallel(hash1::Vector{UInt8}, ex::FoldsThreads.Folds
         end
     end
 
-    suite["loop_4"] = @benchmarkable begin
-        if isnothing($found)
-            @floop $ex for letter in $letters if isnothing($found)
+    suite["loop_4"] = @timed begin
+        if isnothing(found)
+            @floop ex for letter in letters if isnothing(found)
                 local_str = fill('\0',4)
                 local_str[1] = letter
-                for letter in $letters if isnothing($found)
+                for letter in letters if isnothing(found)
                     local_str[2] = letter
-                    for letter in $letters if isnothing($found)
+                    for letter in letters if isnothing(found)
                         local_str[3] = letter
-                        for letter in $letters
+                        for letter in letters
                             local_str[4] = letter
                             hash2 = md5(String(local_str))
-                            if $hash1 == hash2
-                                lock($lk) do
-                                    $found = String(local_str)
+                            if hash1 == hash2
+                                lock(lk) do
+                                    found = String(local_str)
                                 end
                                 break
                             end
@@ -310,23 +309,23 @@ function debug_brute_force_parallel(hash1::Vector{UInt8}, ex::FoldsThreads.Folds
         end
     end
 
-    suite["loop_5"] = @benchmarkable begin
-        if isnothing($found)
-            @floop $ex for letter in $letters if isnothing($found)
+    suite["loop_5"] = @timed begin
+        if isnothing(found)
+            @floop ex for letter in letters if isnothing(found)
                 local_str = fill('\0',5)
                 local_str[1] = letter
-                for letter in $letters if isnothing($found)
+                for letter in letters if isnothing(found)
                     local_str[2] = letter
-                    for letter in $letters if isnothing($found)
+                    for letter in letters if isnothing(found)
                         local_str[3] = letter
-                        for letter in $letters if isnothing($found)
+                        for letter in letters if isnothing(found)
                             local_str[4] = letter
-                            for letter in $letters
+                            for letter in letters
                                 local_str[5] = letter
                                 hash2 = md5(String(local_str))
-                                if $hash1 == hash2
-                                    lock($lk) do
-                                        $found = String(local_str)
+                                if hash1 == hash2
+                                    lock(lk) do
+                                        found = String(local_str)
                                     end
                                     break
                                 end
@@ -338,25 +337,25 @@ function debug_brute_force_parallel(hash1::Vector{UInt8}, ex::FoldsThreads.Folds
         end
     end
 
-    suite["loop_6"] = @benchmarkable begin
-        if isnothing($found)
-            @floop $ex for letter in $letters if isnothing($found)
+    suite["loop_6"] = @timed begin
+        if isnothing(found)
+            @floop ex for letter in letters if isnothing(found)
                 local_str = fill('\0',6)
                 local_str[1] = letter
-                for letter in $letters if isnothing($found)
+                for letter in letters if isnothing(found)
                     local_str[2] = letter
-                    for letter in $letters if isnothing($found)
+                    for letter in letters if isnothing(found)
                         local_str[3] = letter
-                        for letter in $letters if isnothing($found)
+                        for letter in letters if isnothing(found)
                             local_str[4] = letter
-                            for letter in $letters if isnothing($found)
+                            for letter in letters if isnothing(found)
                                 local_str[5] = letter
-                                for letter in $letters
+                                for letter in letters
                                     local_str[6] = letter
                                     hash2 = md5(String(local_str))
-                                    if $hash1 == hash2
-                                        lock($lk) do
-                                            $found = String(local_str)
+                                    if hash1 == hash2
+                                        lock(lk) do
+                                            found = String(local_str)
                                         end
                                         break
                                     end
@@ -369,27 +368,27 @@ function debug_brute_force_parallel(hash1::Vector{UInt8}, ex::FoldsThreads.Folds
         end
     end
 
-    suite["loop_7"] = @benchmarkable begin
-        if isnothing($found)
-            @floop $ex for letter in $letters if isnothing($found)
+    suite["loop_7"] = @timed begin
+        if isnothing(found)
+            @floop ex for letter in letters if isnothing(found)
                 local_str = fill('\0',7)
                 local_str[1] = letter
-                for letter in $letters if isnothing($found)
+                for letter in letters if isnothing(found)
                     local_str[2] = letter
-                    for letter in $letters if isnothing($found)
+                    for letter in letters if isnothing(found)
                         local_str[3] = letter
-                        for letter in $letters if isnothing($found)
+                        for letter in letters if isnothing(found)
                             local_str[4] = letter
-                            for letter in $letters if isnothing($found)
+                            for letter in letters if isnothing(found)
                                 local_str[5] = letter
-                                for letter in $letters if isnothing($found)
+                                for letter in letters if isnothing(found)
                                     local_str[6] = letter
-                                    for letter in $letters
+                                    for letter in letters
                                         local_str[7] = letter
                                         hash2 = md5(String(local_str))
-                                        if $hash1 == hash2
-                                            lock($lk) do
-                                                $found = String(local_str)
+                                        if hash1 == hash2
+                                            lock(lk) do
+                                                found = String(local_str)
                                             end
                                             break
                                         end
@@ -403,29 +402,29 @@ function debug_brute_force_parallel(hash1::Vector{UInt8}, ex::FoldsThreads.Folds
         end
     end
 
-    suite["loop_8"] = @benchmarkable begin
-        if isnothing($found)
-            @floop $ex for letter in $letters if isnothing($found)
+    suite["loop_8"] = @timed begin
+        if isnothing(found)
+            @floop ex for letter in letters if isnothing(found)
                 local_str = fill('\0',8)
                 local_str[1] = letter
-                for letter in $letters if isnothing($found)
+                for letter in letters if isnothing(found)
                     local_str[2] = letter
-                    for letter in $letters if isnothing($found)
+                    for letter in letters if isnothing(found)
                         local_str[3] = letter
-                        for letter in $letters if isnothing($found)
+                        for letter in letters if isnothing(found)
                             local_str[4] = letter
-                            for letter in $letters if isnothing($found)
+                            for letter in letters if isnothing(found)
                                 local_str[5] = letter
-                                for letter in $letters if isnothing($found)
+                                for letter in letters if isnothing(found)
                                     local_str[6] = letter
-                                    for letter in $letters if isnothing($found)
+                                    for letter in letters if isnothing(found)
                                         local_str[7] = letter
-                                        for letter in $letters
+                                        for letter in letters
                                             local_str[8] = letter
                                             hash2 = md5(String(local_str))
-                                            if $hash1 == hash2
-                                                lock($lk) do
-                                                    $found = String(local_str)
+                                            if hash1 == hash2
+                                                lock(lk) do
+                                                    found = String(local_str)
                                                 end
                                                 break
                                             end
@@ -465,9 +464,8 @@ end
 
 function debug_crack_password_parallel(kwargs::NamedTuple{T}) where T
     loop_tasks = [[Int64[] for _ in 1:nthreads()] for _ in 1:8]
-    suite = BenchmarkGroup()
+    suite = Dict{String,Tuple}()
     hash1 = hex2bytes(kwargs.hash1_str)
-    debug_brute_force_parallel(hash1, kwargs.ex, loop_tasks, suite)
-    tune!(suite)
-    return BenchmarkResults(loop_tasks, suite)
+    suite["app"] = @timed debug_brute_force_parallel(hash1, kwargs.ex, loop_tasks, suite)
+    return BenchmarkSample(loop_tasks, suite)
 end
