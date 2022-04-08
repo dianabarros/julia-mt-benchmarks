@@ -1,0 +1,14 @@
+c FILE : graph_5.gh
+c No. of vertices : 5
+c No. of directed edges : 6
+c Max. weight : 1
+c Min. weight : 1
+c A directed arc from u to v of weight w
+c is represented below as ' a u v w '
+p sp 5 6
+a 1 2 1
+a 1 4 1
+a 3 2 1
+a 4 3 1
+a 4 5 1
+a 5 3 1
