@@ -17,12 +17,14 @@ function read_file()
     nNodes = undef
     bytes_per_row = undef
     graph = undef
+    # graph2 = undef
     for line in eachline(stdin)
         tokens = split(line, ' ')
         if tokens[1] == "p"
             nNodes = parse(Int, tokens[3])
             bytes_per_row = div((nNodes + 7), 8)
-            graph = Vector{UInt8}(undef, nNodes*bytes_per_row)
+            # graph = Vector{UInt8}(undef, nNodes*bytes_per_row)
+            graph = Matrix{UInt8}(undef, nNodes, bytes_per_row)
             # @show bytes_per_row
         elseif tokens[1] == "a"
             r = parse(Int, tokens[2])
@@ -30,7 +32,12 @@ function read_file()
             c_int_div = div(c, 8)
             # @show r, c, c_int_div
             # @show bytes_per_row*r + c_int_div
-            graph[bytes_per_row*r + c_int_div] = graph[bytes_per_row*r + c_int_div] | c_remainder_lookup[c%8]
+            # @show graph[bytes_per_row*r + c_int_div]
+            # @show graph2[r, c_int_div+1]
+            # @show c_remainder_lookup[c%8]
+            # @show c_remainder_lookup[(c+1)%8]
+            # graph[bytes_per_row*r + c_int_div] = graph[bytes_per_row*r + c_int_div] | c_remainder_lookup[c%8]
+            graph[r, c_int_div+1] = graph[r, c_int_div+1] | c_remainder_lookup[c%8]
         end
     end
     return nNodes, bytes_per_row, graph
@@ -62,8 +69,9 @@ end
 
 
 nNodes, bytes_per_row, graph = read_file()
+@show graph
 println("Input:")
 write_graph(nNodes, bytes_per_row, graph)
-warshall!(nNodes, bytes_per_row, graph)
-println("Output:")
-write_graph(nNodes, bytes_per_row, graph)
+# warshall!(nNodes, bytes_per_row, graph)
+# println("Output:")
+# write_graph(nNodes, bytes_per_row, graph)
