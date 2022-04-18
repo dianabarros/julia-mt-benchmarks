@@ -24,36 +24,17 @@ function read_file()
     nNodes = undef
     bytes_per_row = undef
     graph = undef
-    # graph2 = undef
     for line in eachline(stdin)
         tokens = split(line, ' ')
         if tokens[1] == "p"
             nNodes = parse(Int, tokens[3])
             bytes_per_row = div((nNodes + 7), 8)
             graph = Vector{UInt8}(undef, nNodes*bytes_per_row)
-            # graph = Matrix{UInt8}(undef, nNodes, bytes_per_row)
-            # @show bytes_per_row
         elseif tokens[1] == "a"
             r = parse(Int, tokens[2]) - 1
             c = parse(Int, tokens[3]) - 1
             c_int_div = div(c, 8)
-            # @show r, c, c_int_div
-            # @show bytes_per_row*r + c_int_div
-            # @show graph[bytes_per_row*r + c_int_div]
-            # @show graph2[r, c_int_div+1]
-            # @show c_remainder_lookup[c%8]
-            # @show c_remainder_lookup[(c+1)%8]
-            # if c%8 == 0
-            #     @show c
-            # end
-            # if bytes_per_row*r + c_int_div == length(graph)+1
-            #     @show r
-            #     @show c
-            #     @show c_int_div
-            #     @show bytes_per_row*r + c_int_div
-            # end
             graph[bytes_per_row*(r) + c_int_div + 1] = graph[bytes_per_row*(r) + c_int_div + 1] | c_remainder_lookup[c%8]
-            # graph[r, c_int_div+1] = graph[r, c_int_div+1] | c_remainder_lookup[(c-1)%8]
         end
     end
     return nNodes, bytes_per_row, graph
@@ -72,12 +53,9 @@ function warshall!(nNodes, bytes_per_row, graph)
     for c in 0:nNodes-1
         c_int_div = div(c,8)
         column_bit = c_remainder_lookup[c%8]
-        # pragma omp parallel for private(r, j) shared(graph, c, c_int_div, column_bit, nNodes, bytes_per_row)
         for r in 0:nNodes-1
-            # if (r != c && (graph[r+1, c_int_div+1]&column_bit != 0))
             if (r != c && (graph[r * bytes_per_row + c_int_div + 1]&column_bit != 0))
                 for j in 0:bytes_per_row-1
-                    # graph[r+1, j+1] = graph[r+1, j+1] | graph[c+1, j+1]
                     graph[r * bytes_per_row + j + 1] = graph[r * bytes_per_row + j + 1] | graph[c * bytes_per_row + j + 1]
                 end
             end
