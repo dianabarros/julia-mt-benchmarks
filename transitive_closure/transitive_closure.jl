@@ -41,12 +41,12 @@ function read_file(file_path::String)
             if tokens[1] == "p"
                 nNodes = parse(Int, tokens[3])
                 bytes_per_row = div((nNodes + 7), 8)
-                graph = Vector{UInt8}(undef, nNodes*bytes_per_row)
+                graph = zeros(UInt8, (nNodes, bytes_per_row))
             elseif tokens[1] == "a"
                 r = parse(Int, tokens[2]) - 1
                 c = parse(Int, tokens[3]) - 1
                 c_int_div = div(c, 8)
-                graph[bytes_per_row*(r) + c_int_div + 1] = graph[bytes_per_row*(r) + c_int_div + 1] | c_remainder_lookup[c%8]
+                graph[r + 1, c_int_div + 1] = graph[r + 1, c_int_div + 1] | c_remainder_lookup[c%8]
             end
         end
     end
@@ -62,14 +62,16 @@ function write_graph(nNodes, bytes_per_row, graph)
     end
 end
 
-function warshall!(nNodes::Int64, bytes_per_row::Int64, graph::Vector{UInt8})
+function warshall!(nNodes::Int64, bytes_per_row::Int64, graph::Matrix{UInt8})
     for c in 0:nNodes-1
         c_int_div = div(c,8)
         column_bit = c_remainder_lookup[c%8]
         for r in 0:nNodes-1
-            if (r != c && (graph[r * bytes_per_row + c_int_div + 1]&column_bit != 0))
+            # if (r != c && (graph[r * bytes_per_row + c_int_div + 1]&column_bit != 0))
+            if (r != c && (graph[r+1, c_int_div+1]&column_bit != 0))
                 for j in 0:bytes_per_row-1
-                    graph[r * bytes_per_row + j + 1] = graph[r * bytes_per_row + j + 1] | graph[c * bytes_per_row + j + 1]
+                    # graph[r * bytes_per_row + j + 1] = graph[r * bytes_per_row + j + 1] | graph[c * bytes_per_row + j + 1]
+                    graph[r+1,j+1] = graph[r+1,j+1] | graph[c+1, j+1]
                 end
             end
         end
