@@ -62,7 +62,11 @@ function write_graph(nNodes, bytes_per_row, graph)
     end
 end
 
-function warshall!(nNodes::Int64, bytes_per_row::Int64, graph::Matrix{UInt8})
+function warshall!(nNodes::Int64, bytes_per_row::Int64, graph::Matrix{UInt8};
+    ex::Union{FoldsThreads.FoldsBase.Executor,Nothing}=nothing, 
+    task_distribution::Union{Vector{Vector{Int64}},Nothing}=nothing,
+    suite::Union{Dict{String,Tuple},Nothing}=nothing
+    )
     for c in 0:nNodes-1
         c_int_div = div(c,8)
         column_bit = c_remainder_lookup[c%8]
@@ -78,7 +82,11 @@ function warshall!(nNodes::Int64, bytes_per_row::Int64, graph::Matrix{UInt8})
     end
 end
 
-function warshall_floops!(nNodes::Int64, bytes_per_row::Int64, graph::Vector{UInt8}, ex::FoldsThreads.FoldsBase.Executor, task_distribution::Vector{Vector{Int64}}, suite::Dict{String,Tuple})
+function warshall_floops!(nNodes::Int64, bytes_per_row::Int64, graph::Vector{UInt8};
+        ex::Union{FoldsThreads.FoldsBase.Executor,Nothing}=nothing, 
+        task_distribution::Union{Vector{Vector{Int64}},Nothing}=nothing,
+        suite::Union{Dict{String,Tuple},Nothing}=nothing
+    )
     for c in 0:nNodes-1
         c_int_div = div(c,8)
         column_bit = c_remainder_lookup[c%8]
@@ -93,7 +101,11 @@ function warshall_floops!(nNodes::Int64, bytes_per_row::Int64, graph::Vector{UIn
     end
 end
 
-function warshall_threads!(nNodes::Int64, bytes_per_row::Int64, graph::Vector{UInt8}, ex::FoldsThreads.FoldsBase.Executor, task_distribution::Vector{Vector{Int64}}, suite::Dict{String,Tuple})
+function warshall_threads!(nNodes::Int64, bytes_per_row::Int64, graph::Vector{UInt8};
+        ex::Union{FoldsThreads.FoldsBase.Executor,Nothing}=nothing, 
+        task_distribution::Union{Vector{Vector{Int64}},Nothing}=nothing,
+        suite::Union{Dict{String,Tuple},Nothing}=nothing
+    )
     for c in 0:nNodes-1
         c_int_div = div(c,8)
         column_bit = c_remainder_lookup[c%8]
@@ -119,6 +131,12 @@ function debug(kwargs::NamedTuple{T}) where T
     task_distribution = [Int64[] for _ in 1:nthreads()]
     suite = Dict{String,Tuple}()
     nNodes, bytes_per_row, graph = read_file(kwargs.file_path)
-    suite["app"] = @timed kwargs.f(nNodes, bytes_per_row, graph, kwargs.ex, task_distribution, suite)
+    if haskey(kwargs, :ex)
+        ex = kwargs.ex
+    else
+        ex = nothing
+    end
+    suite["app"] = @timed kwargs.f(nNodes, bytes_per_row, graph, 
+        ex=ex, task_distribution=task_distribution, suite=suite)
     return BenchmarkSample(task_distribution, suite)
 end
