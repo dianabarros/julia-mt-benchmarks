@@ -71,10 +71,8 @@ function warshall!(nNodes::Int64, bytes_per_row::Int64, graph::Matrix{UInt8};
         c_int_div = div(c,8)
         column_bit = c_remainder_lookup[c%8]
         for r in 0:nNodes-1
-            # if (r != c && (graph[r * bytes_per_row + c_int_div + 1]&column_bit != 0))
             if (r != c && (graph[r+1, c_int_div+1]&column_bit != 0))
                 for j in 0:bytes_per_row-1
-                    # graph[r * bytes_per_row + j + 1] = graph[r * bytes_per_row + j + 1] | graph[c * bytes_per_row + j + 1]
                     graph[r+1,j+1] = graph[r+1,j+1] | graph[c+1, j+1]
                 end
             end
@@ -82,7 +80,7 @@ function warshall!(nNodes::Int64, bytes_per_row::Int64, graph::Matrix{UInt8};
     end
 end
 
-function warshall_floops!(nNodes::Int64, bytes_per_row::Int64, graph::Vector{UInt8};
+function warshall_floops!(nNodes::Int64, bytes_per_row::Int64, graph::Matrix{UInt8};
         ex::Union{FoldsThreads.FoldsBase.Executor,Nothing}=nothing, 
         task_distribution::Union{Vector{Vector{Int64}},Nothing}=nothing,
         suite::Union{Dict{String,Tuple},Nothing}=nothing
@@ -92,16 +90,16 @@ function warshall_floops!(nNodes::Int64, bytes_per_row::Int64, graph::Vector{UIn
         column_bit = c_remainder_lookup[c%8]
         @floop ex for r in 0:nNodes-1
             push!(task_distribution[threadid()], r)
-            if (r != c && (graph[r * bytes_per_row + c_int_div + 1]&column_bit != 0))
+            if (r != c && (graph[r+1, c_int_div+1]&column_bit != 0))
                 for j in 0:bytes_per_row-1
-                    graph[r * bytes_per_row + j + 1] = graph[r * bytes_per_row + j + 1] | graph[c * bytes_per_row + j + 1]
+                    graph[r+1,j+1] = graph[r+1,j+1] | graph[c+1, j+1]
                 end
             end
         end
     end
 end
 
-function warshall_threads!(nNodes::Int64, bytes_per_row::Int64, graph::Vector{UInt8};
+function warshall_threads!(nNodes::Int64, bytes_per_row::Int64, graph::Matrix{UInt8};
         ex::Union{FoldsThreads.FoldsBase.Executor,Nothing}=nothing, 
         task_distribution::Union{Vector{Vector{Int64}},Nothing}=nothing,
         suite::Union{Dict{String,Tuple},Nothing}=nothing
@@ -111,21 +109,14 @@ function warshall_threads!(nNodes::Int64, bytes_per_row::Int64, graph::Vector{UI
         column_bit = c_remainder_lookup[c%8]
         @threads for r in 0:nNodes-1
             push!(task_distribution[threadid()], r)
-            if (r != c && (graph[r * bytes_per_row + c_int_div + 1]&column_bit != 0))
+            if (r != c && (graph[r+1, c_int_div+1]&column_bit != 0))
                 for j in 0:bytes_per_row-1
-                    graph[r * bytes_per_row + j + 1] = graph[r * bytes_per_row + j + 1] | graph[c * bytes_per_row + j + 1]
+                    graph[r+1,j+1] = graph[r+1,j+1] | graph[c+1, j+1]
                 end
             end
         end
     end
 end
-
-# nNodes, bytes_per_row, graph = read_file()
-# println("Input:")
-# write_graph(nNodes, bytes_per_row, graph)
-# warshall!(nNodes, bytes_per_row, graph)
-# println("Output:")
-# write_graph(nNodes, bytes_per_row, graph)
 
 function debug(kwargs::NamedTuple{T}) where T
     task_distribution = [Int64[] for _ in 1:nthreads()]
