@@ -4,7 +4,7 @@ using Base.Threads
 
 mutable struct BenchmarkSample
     task_distribution::Vector{Vector{Int64}}
-    suite::Dict{String,Tuple}
+    suite::Dict{String,NamedTuple}
     correct_results::Union{Bool,Nothing}
 end
 BenchmarkSample(task_distribution, suite) = BenchmarkSample(task_distribution, suite, nothing)
@@ -16,7 +16,9 @@ function gcd(u::Int64, v::Int64)
     return gcd(v, u % v)
 end
 
-function friendly_numbers(start::Int64, stop::Int64)
+function friendly_numbers(
+        start::Int64, stop::Int64
+    ) where T
     last = stop - start + 1
     the_num = zeros(Int64, last)
     num = zeros(Int64, last)
@@ -150,8 +152,9 @@ function friendly_numbers_threads(start::Int64, stop::Int64, ex::FoldsThreads.Fo
 end
 
 function debug_friendly_numbers_floop(
-        start::Int64, stop::Int64, ex::FoldsThreads.FoldsBase.Executor, 
-        task_distribution::Vector{Vector{Int64}}, suite::Dict{T}
+        start::Int64, stop::Int64; ex::Union{FoldsThreads.FoldsBase.Executor,Nothing}=nothing, 
+        task_distribution::Union{Vector{Vector{Int64}},Nothing}=nothing,
+        suite::Union{Dict{T},Nothing}=nothing
     ) where T
     last = stop - start + 1
     the_num = zeros(Int64, last)
@@ -199,8 +202,9 @@ function debug_friendly_numbers_floop(
 end
 
 function debug_friendly_numbers_threads(
-        start::Int64, stop::Int64, ex::FoldsThreads.FoldsBase.Executor, 
-        task_distribution::Vector{Vector{Int64}}, suite::Dict{T}
+        start::Int64, stop::Int64;ex::Union{FoldsThreads.FoldsBase.Executor,Nothing}=nothing, 
+        task_distribution::Union{Vector{Vector{Int64}},Nothing}=nothing,
+        suite::Union{Dict{T},Nothing}=nothing
     ) where T
     last = stop - start + 1
     the_num = zeros(Int64, last)
@@ -249,13 +253,16 @@ end
 
 
 
-function main(kwargs::NamedTuple{T}) where T
+function debug(f::T, start::Int64, stop::Int64;
+        ex::Union{FoldsThreads.FoldsBase.Executor,Nothing}=nothing, 
+        check_sequential::Union{Bool,Nothing}=nothing
+    ) where T
     task_distribution = [Int64[] for _ in 1:nthreads()]
     suite = Dict()
-    suite["app"] = @timed kwargs.f(kwargs.start, kwargs.stop, kwargs.ex, task_distribution, suite)
+    suite["app"] = @timed f(start, stop, ex=ex, task_distribution=task_distribution, suite=suite)
     correct_results = nothing
-    if kwargs.check_sequential
-        correct_results = friendly_numbers(kwargs.start, kwargs.stop) == suite["app"][1]
+    if !isnothing(check_sequential) && check_sequential
+        correct_results = friendly_numbers(start, stop) == suite["app"][1]
     end
     return BenchmarkSample(task_distribution, suite, correct_results)
 end

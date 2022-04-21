@@ -4,7 +4,7 @@ using FoldsThreads
 
 mutable struct BenchmarkSample
     task_distribution::Vector{Vector{Int64}}
-    suite::Dict{String,Tuple}
+    suite::Dict{String,NamedTuple}
     correct_results::Union{Bool,Nothing}
 end
 BenchmarkSample(task_distribution, suite) = BenchmarkSample(task_distribution, suite, nothing)
@@ -65,7 +65,7 @@ end
 function warshall!(nNodes::Int64, bytes_per_row::Int64, graph::Matrix{UInt8};
     ex::Union{FoldsThreads.FoldsBase.Executor,Nothing}=nothing, 
     task_distribution::Union{Vector{Vector{Int64}},Nothing}=nothing,
-    suite::Union{Dict{String,Tuple},Nothing}=nothing
+    suite::Union{Dict{String,NamedTuple},Nothing}=nothing
     )
     for c in 0:nNodes-1
         c_int_div = div(c,8)
@@ -83,7 +83,7 @@ end
 function warshall_floops!(nNodes::Int64, bytes_per_row::Int64, graph::Matrix{UInt8};
         ex::Union{FoldsThreads.FoldsBase.Executor,Nothing}=nothing, 
         task_distribution::Union{Vector{Vector{Int64}},Nothing}=nothing,
-        suite::Union{Dict{String,Tuple},Nothing}=nothing
+        suite::Union{Dict{String,NamedTuple},Nothing}=nothing
     )
     for c in 0:nNodes-1
         c_int_div = div(c,8)
@@ -102,7 +102,7 @@ end
 function warshall_threads!(nNodes::Int64, bytes_per_row::Int64, graph::Matrix{UInt8};
         ex::Union{FoldsThreads.FoldsBase.Executor,Nothing}=nothing, 
         task_distribution::Union{Vector{Vector{Int64}},Nothing}=nothing,
-        suite::Union{Dict{String,Tuple},Nothing}=nothing
+        suite::Union{Dict{String,NamedTuple},Nothing}=nothing
     )
     for c in 0:nNodes-1
         c_int_div = div(c,8)
@@ -118,16 +118,20 @@ function warshall_threads!(nNodes::Int64, bytes_per_row::Int64, graph::Matrix{UI
     end
 end
 
-function debug(kwargs::NamedTuple{T}) where T
+function debug(f::T, file_path::String; 
+        ex::Union{FoldsThreads.FoldsBase.Executor,Nothing}=nothing, 
+        check_sequential::Union{Bool,Nothing}=nothing
+    ) where T
     task_distribution = [Int64[] for _ in 1:nthreads()]
-    suite = Dict{String,Tuple}()
-    nNodes, bytes_per_row, graph = read_file(kwargs.file_path)
-    if haskey(kwargs, :ex)
-        ex = kwargs.ex
-    else
-        ex = nothing
-    end
-    suite["app"] = @timed kwargs.f(nNodes, bytes_per_row, graph, 
+    suite = Dict{String,NamedTuple}()
+    nNodes, bytes_per_row, graph = read_file(file_path)
+    graph_seq = copy(graph)
+    correct_results = nothing
+    suite["app"] = @timed f(nNodes, bytes_per_row, graph, 
         ex=ex, task_distribution=task_distribution, suite=suite)
-    return BenchmarkSample(task_distribution, suite)
+    if !isnothing(check_sequential) && check_sequential
+        warshall!(nNodes, bytes_per_row, graph_seq)
+        correct_results = graph_seq == graph
+    end
+    return BenchmarkSample(task_distribution, suite, correct_results)
 end
