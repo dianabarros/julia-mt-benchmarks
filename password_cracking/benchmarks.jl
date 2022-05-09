@@ -66,20 +66,20 @@ end
 
 iterations = 1
 
-df = DataFrame(func=String[], input=String[], executor=String[], basesize=Int64[], total_time=Float64[])
+df = DataFrame(func=String[], input=String[], executor=String[], basesize=Int64[], n_threads=Int64[], total_time=Float64[])
 df_file_name = "pw_cracking_results.csv"
 
 task_distribution = []
 
 for run in runs
+    it_dist = Dict()
     for it in 1:iterations
         @show run
-        it_dist = Dict()
         bench_sample = debug_crack_password(
             run.f, run.hash_str, ex=run.ex(basesize=run.basesize), check_sequential=run.check_sequential
         )
         it_dist[it] = bench_sample.loop_tasks
-        push!(df, (func=String(Symbol(run.f)), input=run.pw, executor=String(Symbol(run.ex)), basesize=run.basesize, total_time=bench_sample.suite["app"][2]))
+        push!(df, (func=String(Symbol(run.f)), input=run.pw, executor=String(Symbol(run.ex)), basesize=run.basesize, n_threads=nthreads(), total_time=bench_sample.suite["app"][2]))
         CSV.write(df_file_name, df)
     end
     push!(task_distribution, (run=run, dist=it_dist))

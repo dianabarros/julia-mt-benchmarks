@@ -119,7 +119,7 @@ function warshall_threads!(nNodes::Int64, bytes_per_row::Int64, graph::Matrix{UI
 end
 
 function debug(f::T, file_path::String; 
-        ex::Union{FoldsThreads.FoldsBase.Executor,Nothing}=nothing, 
+        ex::UnionAll=nothing, 
         check_sequential::Union{Bool,Nothing}=nothing
     ) where T
     task_distribution = [Int64[] for _ in 1:nthreads()]
@@ -128,7 +128,7 @@ function debug(f::T, file_path::String;
     graph_seq = copy(graph)
     correct_results = nothing
     suite["app"] = @timed f(nNodes, bytes_per_row, graph, 
-        ex=ex, task_distribution=task_distribution, suite=suite)
+        ex=ex(div(nNodes, nthreads())), task_distribution=task_distribution, suite=suite)
     if !isnothing(check_sequential) && check_sequential
         warshall!(nNodes, bytes_per_row, graph_seq)
         correct_results = graph_seq == graph

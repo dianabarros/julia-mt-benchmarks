@@ -1,4 +1,6 @@
 [deps]
+CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 FLoops = "cc61a311-1640-44b5-9fba-1b764f453329"
 FoldsThreads = "9c68100b-dfe1-47cf-94c8-95104e173443"
 MD5 = "6ac74813-4b46-53a4-afec-0b5dc9d7885c"
