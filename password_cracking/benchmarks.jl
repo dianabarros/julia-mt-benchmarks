@@ -66,7 +66,11 @@ end
 
 iterations = 1
 
-df = DataFrame(func=String[], input=String[], executor=String[], basesize=Int64[], n_threads=Int64[], total_time=Float64[])
+df = DataFrame(func=String[], input=String[], executor=String[], 
+                basesize=Int64[], n_threads=Int64[], total_bytes=Int64[], 
+                total_time=Float64[], loop_1_time=Float64[], loop_2_time=Float64[], loop_3_time=Float64[],
+                loop_4_time=Float64[], loop_5_time=Float64[], loop_6_time=Float64[], loop_7_time=Float64[],
+                loop_8_time=Float64[])
 df_file_name = "pw_cracking_results.csv"
 
 task_distribution = []
@@ -79,7 +83,17 @@ for run in runs
             run.f, run.hash_str, ex=run.ex(basesize=run.basesize), check_sequential=run.check_sequential
         )
         it_dist[it] = bench_sample.loop_tasks
-        push!(df, (func=String(Symbol(run.f)), input=run.pw, executor=String(Symbol(run.ex)), basesize=run.basesize, n_threads=nthreads(), total_time=bench_sample.suite["app"].time))
+        push!(df, (func=String(Symbol(run.f)), input=run.pw, executor=String(Symbol(run.ex)), basesize=run.basesize, 
+            n_threads=nthreads(), total_bytes=bench_sample.suite["app"].bytes, total_time=bench_sample.suite["app"].time,
+            loop_1_time=haskey(bench_sample.suite, "loop_1") ? bench_sample.suite["loop_1"].time : 0.0, 
+            loop_2_time=haskey(bench_sample.suite, "loop_2") ? bench_sample.suite["loop_2"].time : 0.0,
+            loop_3_time=haskey(bench_sample.suite, "loop_3") ? bench_sample.suite["loop_3"].time : 0.0,
+            loop_4_time=haskey(bench_sample.suite, "loop_4") ? bench_sample.suite["loop_4"].time : 0.0,
+            loop_5_time=haskey(bench_sample.suite, "loop_5") ? bench_sample.suite["loop_5"].time : 0.0,
+            loop_6_time=haskey(bench_sample.suite, "loop_6") ? bench_sample.suite["loop_6"].time : 0.0,
+            loop_7_time=haskey(bench_sample.suite, "loop_7") ? bench_sample.suite["loop_7"].time : 0.0,
+            loop_8_time=haskey(bench_sample.suite, "loop_8") ? bench_sample.suite["loop_8"].time : 0.0)
+            )
         CSV.write(df_file_name, df)
     end
     push!(task_distribution, (run=run, dist=it_dist))
