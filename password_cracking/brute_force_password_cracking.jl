@@ -1098,7 +1098,7 @@ function debug_crack_password(
     suite["app"] = @timed f(hash1, ex=ex, loop_tasks=loop_tasks, suite=suite)
     correct_results = nothing
     if !isnothing(check_sequential) && check_sequential
-        correct_results = brute_force(hash1) == suite["app"][1]
+        correct_results = brute_force(hash1) == suite["app"].value
     end
     return BenchmarkSample(loop_tasks, suite, correct_results)
 end

@@ -309,7 +309,7 @@ function debug(f::T, start::Int64, stop::Int64;
     suite["app"] = @timed f(start, stop, ex=ex, task_distribution=task_distribution, suite=suite)
     correct_results = nothing
     if !isnothing(check_sequential) && check_sequential
-        correct_results = friendly_numbers(start, stop) == suite["app"][1]
+        correct_results = friendly_numbers(start, stop) == suite["app"].value
     end
     return BenchmarkSample(task_distribution, suite, correct_results)
 end

@@ -40,7 +40,7 @@ for run in runs
             run.f, run.start, run.stop, ex=run.ex(basesize=div(run.stop-run.start, nthreads())), check_sequential=run.check_sequential
         )
         it_dist[it] = bench_sample.task_distribution
-        push!(df, (func=String(Symbol(run.f)), input=run.size, executor=String(Symbol(run.ex)), n_threads=nthreads(), total_time=bench_sample.suite["app"][2]))
+        push!(df, (func=String(Symbol(run.f)), input=run.size, executor=String(Symbol(run.ex)), n_threads=nthreads(), total_time=bench_sample.suite["app"].time))
         CSV.write(df_file_name, df)
     end
     push!(task_distribution, (run=run, dist=it_dist))
