@@ -9,7 +9,7 @@ inputs = Dict(
     "large" => (0, 100000)
 )
 
-funcs =[debug_friendly_numbers_threads, debug_friendly_numbers_floop]
+funcs =[debug_friendly_numbers, debug_friendly_numbers_threads, debug_friendly_numbers_floop]
 
 executors = [ThreadedEx, WorkStealingEx, DepthFirstEx, TaskPoolEx, NondeterministicEx]
 
