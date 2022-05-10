@@ -1,3 +1,5 @@
+# https://www.analyticsvidhya.com/blog/2019/08/comprehensive-guide-k-means-clustering/#h2_1
+
 using DataFrames
 using CSV
 using Statistics
@@ -15,11 +17,13 @@ function calculate_cost(X, centroids, cluster)
 end
 
 function find_centroids(X, cluster)
-    gd = groupby(DataFrame(hcat(X,cluster), :auto), :x3)
-    centroids_df = combine(gd, :x1 => mean, :x2 => mean)
+    gd = groupby(DataFrame(hcat(X,cluster)), :x1)
+    columns = propertynames(X)
+    centroids_df = combine(gd, columns[1] => mean, columns[2] => mean)
+    centroids_columns = [Symbol(string(columns[1],"_mean")), Symbol(string(columns[2],"_mean"))]
     centroids = []
     for row in eachrow(centroids_df)
-        push!(centroids, [row.x1_mean, row.x2_mean])
+        push!(centroids, [row[centroids_columns[1]], row[centroids_columns[2]]])
     end
     return centroids
 end
@@ -30,9 +34,9 @@ function kmeans(X, k)
     random_indices = rand(1:size(X,1), k)
     centroids = X[random_indices,:]
     while diff
-        for (i, row) in enumerate(X)
+        for (i, row) in enumerate(eachrow(X))
             mn_dist = Inf
-            for (idx, centroid) in enumerate(centroids)
+            for (idx, centroid) in enumerate(eachrow(centroids))
                 d = sqrt((centroid[1]-row[1])^2 + (centroid[2]-row[2])^2)
                 if mn_dist > d
                     mn_dist = d
