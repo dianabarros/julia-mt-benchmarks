@@ -36,7 +36,11 @@ function kmeans(X, k)
         for i in 1:size(X,1)
             mn_dist = Inf
             for idx in 1:size(centroids,1)
-                d = sqrt((centroids[idx,1]-X[i,1])^2 + (centroids[idx,2]-X[i,2])^2)
+                sum = 0
+                for dim in 1:size(X,2)
+                    sum += (centroids[idx,dim]-X[i,dim])^2
+                end
+                d = sqrt(sum)
                 if mn_dist > d
                     mn_dist = d
                     cluster[i] = idx
