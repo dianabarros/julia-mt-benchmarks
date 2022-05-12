@@ -17,11 +17,12 @@ function calculate_cost(X, centroids, cluster)
 end
 
 function find_centroids(X, cluster)
-    gd = groupby(DataFrame(hcat(X,cluster), :auto), :x3)
-    centroids_df = combine(gd, :x1 => mean, :x2 => mean)
-    centroids = zeros(2,2)
+    df = DataFrame(hcat(X,cluster), :auto)
+    gd = groupby(df, propertynames(df)[end])
+    centroids_df = combine(gd, propertynames(df)[1:end-1] .=> mean)
+    centroids = zeros(size(centroids_df,1),size(X,2))
     for (i,row) in enumerate(eachrow(centroids_df))
-        centroids[i,:] = [row.x1_mean, row.x2_mean]
+        centroids[i,:] = Vector(row)[2:end]
     end
     return centroids
 end
