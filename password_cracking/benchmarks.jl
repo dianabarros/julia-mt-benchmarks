@@ -41,6 +41,8 @@ inputs = Dict(
     )
 )
 
+input_samples = 10
+
 funcs = [debug_brute_force, debug_brute_force_threads, debug_brute_force_floop]
 
 basesizes = [div(length(letters), nthreads())]
@@ -52,7 +54,8 @@ check_sequential = true
 runs = []
 
 for pw_size in keys(inputs)
-    for (pw, hash_str) in inputs[pw_size]
+    for pw in collect(keys(inputs[pw_size]))[1:input_samples]
+        hash_str = inputs[pw_size][pw]
         for func in funcs
             for exec in executors
                 for basesize in basesizes
