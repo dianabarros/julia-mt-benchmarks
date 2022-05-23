@@ -31,22 +31,36 @@ df = DataFrame(func=String[], input=String[], executor=String[], n_threads=Int64
 df_file_name = "mutually_friends_results.csv"
 
 task_distribution = []
+task_times = []
 
 for run in runs
     it_dist = Dict()
+    it_ttimes = Dict()
     for it in 1:iterations
         @show run
         bench_sample = debug(
             run.f, run.start, run.stop, ex=run.ex(basesize=div(run.stop-run.start, nthreads())), check_sequential=run.check_sequential
         )
         it_dist[it] = bench_sample.task_distribution
+        if haskey(bench_sample.suite, "task")
+            it_ttimes[it] = bench_sample.suite["task"]
+        end
         push!(df, (func=String(Symbol(run.f)), input=run.size, executor=String(Symbol(run.ex)), n_threads=nthreads(),
         total_bytes=bench_sample.suite["app"].bytes, total_time=bench_sample.suite["app"].time))
         CSV.write(df_file_name, df)
     end
     push!(task_distribution, (run=run, dist=it_dist))
+    if length(it_dist) != 0
+        push!(task_times, (run=run, dist=it_dist))
+    end
 end
 
 open("mutually_friends_task_distribution.txt", "w") do io
     print(io, task_distribution)
+end
+
+if length(task_times) != 0
+    open("mutually_friends_task_times.txt", "w") do io
+        print(io, task_times)
+    end
 end

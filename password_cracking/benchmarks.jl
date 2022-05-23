@@ -77,15 +77,25 @@ df = DataFrame(func=String[], input=String[], executor=String[],
 df_file_name = "pw_cracking_results.csv"
 
 task_distribution = []
+task_times = []
 
 for run in runs
     it_dist = Dict()
+    it_ttime = Dict()
     for it in 1:iterations
         @show run
         bench_sample = debug_crack_password(
             run.f, run.hash_str, ex=run.ex(basesize=run.basesize), check_sequential=run.check_sequential
         )
         it_dist[it] = bench_sample.loop_tasks
+        for (key, value) in bench_sample.suite
+            if "tasks" in key
+                if !haskey(it_ttime,it) 
+                    it_ttime[it] = Dict()
+                end
+                it_ttime[it][key] = value
+            end
+        end
         push!(df, (func=String(Symbol(run.f)), input=run.pw, executor=String(Symbol(run.ex)), basesize=run.basesize, 
             n_threads=nthreads(), total_bytes=bench_sample.suite["app"].bytes, total_time=bench_sample.suite["app"].time,
             loop_1_time=haskey(bench_sample.suite, "loop_1") ? bench_sample.suite["loop_1"].time : 0.0, 
@@ -100,8 +110,17 @@ for run in runs
         CSV.write(df_file_name, df)
     end
     push!(task_distribution, (run=run, dist=it_dist))
+    if length(it_dist) != 0
+        push!(task_times, (run=run, dist=it_dist))
+    end
 end
 
 open("pw_craking_task_distribution.txt", "w") do io
     print(io, task_distribution)
+end
+
+if length(task_times) != 0
+    open("mutually_friends_task_times.txt", "w") do io
+        print(io, task_times)
+    end
 end
