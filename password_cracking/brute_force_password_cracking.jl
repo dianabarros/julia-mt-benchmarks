@@ -5,7 +5,7 @@ using Base.Threads
 
 mutable struct BenchmarkSample
     loop_tasks::Vector{Vector{Vector{Int64}}}
-    suite::Dict{String,NamedTuple}
+    suite::Dict{String,Union{NamedTuple,Vector{Vector{NamedTuple}}}}
     correct_results::Union{Bool,Nothing}
 end
 BenchmarkSample(loop_tasks, suite) = BenchmarkSample(loop_tasks, suite, nothing)
@@ -214,8 +214,8 @@ end
 function debug_brute_force(
     hash1::Vector{UInt8}; ex::Union{FoldsThreads.FoldsBase.Executor,Nothing}=nothing,
     loop_tasks::Union{Vector{Vector{Vector{Int64}}},Nothing}=nothing,
-    suite::Union{Dict{String,NamedTuple},Nothing}
-    )
+    suite::Union{Dict{T},Nothing}
+    ) where T
     found = nothing
     suite["loop_1"] = @timed begin
         for letter in letters if isnothing(found)
@@ -619,51 +619,35 @@ function debug_brute_force_floop(
     )
     lk = ReentrantLock()
     found = nothing
+    suite["loop_1_tasks"] = [NamedTuple[] for _ in 1:nthreads()]
     suite["loop_1"] = @timed begin
         @floop ex for letter in letters if isnothing(found)
             push!(loop_tasks[1][threadid()], Int(letter))
-            local_str = fill('\0',1)
-            local_str[1] = letter
-            hash2 = md5(String(local_str))
-            if hash1 == hash2
-                lock(lk) do
-                    found = String(local_str)
+            task_time = @timed begin
+                local_str = fill('\0',1)
+                local_str[1] = letter
+                hash2 = md5(String(local_str))
+                if hash1 == hash2
+                    lock(lk) do
+                        found = String(local_str)
+                    end
+                    break
                 end
-                break
             end
+            push!(suite["loop_1_tasks"][threadid()], task_time)
         end end
     end
 
+    suite["loop_2_tasks"] = [NamedTuple[] for _ in 1:nthreads()]
     suite["loop_2"] = @timed begin
         if isnothing(found)
             @floop ex for letter in letters if isnothing(found)
                 push!(loop_tasks[2][threadid()], Int(letter))
-                local_str = fill('\0',2)
-                local_str[1] = letter
-                for letter in letters
-                    local_str[2] = letter
-                    hash2 = md5(String(local_str))
-                    if hash1 == hash2
-                        lock(lk) do
-                            found = String(local_str)
-                        end
-                        break
-                    end
-                end
-            end end   
-        end
-    end
-
-    suite["loop_3"] = @timed begin
-        if isnothing(found)
-            @floop ex for letter in letters if isnothing(found)
-                push!(loop_tasks[3][threadid()], Int(letter))
-                local_str = fill('\0',3)
-                local_str[1] = letter
-                for letter in letters if isnothing(found)
-                    local_str[2] = letter
+                task_time = @timed begin
+                    local_str = fill('\0',2)
+                    local_str[1] = letter
                     for letter in letters
-                        local_str[3] = letter
+                        local_str[2] = letter
                         hash2 = md5(String(local_str))
                         if hash1 == hash2
                             lock(lk) do
@@ -672,23 +656,24 @@ function debug_brute_force_floop(
                             break
                         end
                     end
-                end end
-            end end
+                end
+                push!(suite["loop_2_tasks"][threadid()], task_time)
+            end end   
         end
     end
 
-    suite["loop_4"] = @timed begin
+    suite["loop_3_tasks"] = [NamedTuple[] for _ in 1:nthreads()]
+    suite["loop_3"] = @timed begin
         if isnothing(found)
             @floop ex for letter in letters if isnothing(found)
-                push!(loop_tasks[4][threadid()], Int(letter))
-                local_str = fill('\0',4)
-                local_str[1] = letter
-                for letter in letters if isnothing(found)
-                    local_str[2] = letter
+                push!(loop_tasks[3][threadid()], Int(letter))
+                task_time = @timed begin
+                    local_str = fill('\0',3)
+                    local_str[1] = letter
                     for letter in letters if isnothing(found)
-                        local_str[3] = letter
+                        local_str[2] = letter
                         for letter in letters
-                            local_str[4] = letter
+                            local_str[3] = letter
                             hash2 = md5(String(local_str))
                             if hash1 == hash2
                                 lock(lk) do
@@ -698,25 +683,26 @@ function debug_brute_force_floop(
                             end
                         end
                     end end
-                end end
+                end
+                push!(suite["loop_3_tasks"][threadid()], task_time)
             end end
         end
     end
 
-    suite["loop_5"] = @timed begin
+    suite["loop_4_tasks"] = [NamedTuple[] for _ in 1:nthreads()]
+    suite["loop_4"] = @timed begin
         if isnothing(found)
             @floop ex for letter in letters if isnothing(found)
-                push!(loop_tasks[5][threadid()], Int(letter))
-                local_str = fill('\0',5)
-                local_str[1] = letter
-                for letter in letters if isnothing(found)
-                    local_str[2] = letter
+                push!(loop_tasks[4][threadid()], Int(letter))
+                task_time = @timed begin
+                    local_str = fill('\0',4)
+                    local_str[1] = letter
                     for letter in letters if isnothing(found)
-                        local_str[3] = letter
+                        local_str[2] = letter
                         for letter in letters if isnothing(found)
-                            local_str[4] = letter
+                            local_str[3] = letter
                             for letter in letters
-                                local_str[5] = letter
+                                local_str[4] = letter
                                 hash2 = md5(String(local_str))
                                 if hash1 == hash2
                                     lock(lk) do
@@ -727,27 +713,28 @@ function debug_brute_force_floop(
                             end
                         end end
                     end end
-                end end
+                end
+                push!(suite["loop_4_tasks"][threadid()], task_time)
             end end
         end
     end
 
-    suite["loop_6"] = @timed begin
+    suite["loop_5_tasks"] = [NamedTuple[] for _ in 1:nthreads()]
+    suite["loop_5"] = @timed begin
         if isnothing(found)
             @floop ex for letter in letters if isnothing(found)
-                push!(loop_tasks[6][threadid()], Int(letter))
-                local_str = fill('\0',6)
-                local_str[1] = letter
-                for letter in letters if isnothing(found)
-                    local_str[2] = letter
+                push!(loop_tasks[5][threadid()], Int(letter))
+                task_time = @timed begin
+                    local_str = fill('\0',5)
+                    local_str[1] = letter
                     for letter in letters if isnothing(found)
-                        local_str[3] = letter
+                        local_str[2] = letter
                         for letter in letters if isnothing(found)
-                            local_str[4] = letter
+                            local_str[3] = letter
                             for letter in letters if isnothing(found)
-                                local_str[5] = letter
+                                local_str[4] = letter
                                 for letter in letters
-                                    local_str[6] = letter
+                                    local_str[5] = letter
                                     hash2 = md5(String(local_str))
                                     if hash1 == hash2
                                         lock(lk) do
@@ -759,29 +746,30 @@ function debug_brute_force_floop(
                             end end
                         end end
                     end end
-                end end
+                end
+                push!(suite["loop_5_tasks"][threadid()], task_time)
             end end
         end
     end
 
-    suite["loop_7"] = @timed begin
+    suite["loop_6_tasks"] = [NamedTuple[] for _ in 1:nthreads()]
+    suite["loop_6"] = @timed begin
         if isnothing(found)
             @floop ex for letter in letters if isnothing(found)
-                push!(loop_tasks[7][threadid()], Int(letter))
-                local_str = fill('\0',7)
-                local_str[1] = letter
-                for letter in letters if isnothing(found)
-                    local_str[2] = letter
+                push!(loop_tasks[6][threadid()], Int(letter))
+                task_time = @timed begin
+                    local_str = fill('\0',6)
+                    local_str[1] = letter
                     for letter in letters if isnothing(found)
-                        local_str[3] = letter
+                        local_str[2] = letter
                         for letter in letters if isnothing(found)
-                            local_str[4] = letter
+                            local_str[3] = letter
                             for letter in letters if isnothing(found)
-                                local_str[5] = letter
+                                local_str[4] = letter
                                 for letter in letters if isnothing(found)
-                                    local_str[6] = letter
+                                    local_str[5] = letter
                                     for letter in letters
-                                        local_str[7] = letter
+                                        local_str[6] = letter
                                         hash2 = md5(String(local_str))
                                         if hash1 == hash2
                                             lock(lk) do
@@ -794,31 +782,32 @@ function debug_brute_force_floop(
                             end end
                         end end
                     end end
-                end end
+                end
+                push!(suite["loop_6_tasks"][threadid()], task_time)
             end end
         end
     end
 
-    suite["loop_8"] = @timed begin
+    suite["loop_7_tasks"] = [NamedTuple[] for _ in 1:nthreads()]
+    suite["loop_7"] = @timed begin
         if isnothing(found)
             @floop ex for letter in letters if isnothing(found)
-                push!(loop_tasks[8][threadid()], Int(letter))
-                local_str = fill('\0',8)
-                local_str[1] = letter
-                for letter in letters if isnothing(found)
-                    local_str[2] = letter
+                push!(loop_tasks[7][threadid()], Int(letter))
+                task_time = @timed begin
+                    local_str = fill('\0',7)
+                    local_str[1] = letter
                     for letter in letters if isnothing(found)
-                        local_str[3] = letter
+                        local_str[2] = letter
                         for letter in letters if isnothing(found)
-                            local_str[4] = letter
+                            local_str[3] = letter
                             for letter in letters if isnothing(found)
-                                local_str[5] = letter
+                                local_str[4] = letter
                                 for letter in letters if isnothing(found)
-                                    local_str[6] = letter
+                                    local_str[5] = letter
                                     for letter in letters if isnothing(found)
-                                        local_str[7] = letter
+                                        local_str[6] = letter
                                         for letter in letters
-                                            local_str[8] = letter
+                                            local_str[7] = letter
                                             hash2 = md5(String(local_str))
                                             if hash1 == hash2
                                                 lock(lk) do
@@ -832,7 +821,50 @@ function debug_brute_force_floop(
                             end end
                         end end
                     end end
-                end end
+                end
+                push!(suite["loop_7_tasks"][threadid()], task_time)
+            end end
+        end
+    end
+
+    suite["loop_8_tasks"] = [NamedTuple[] for _ in 1:nthreads()]
+    suite["loop_8"] = @timed begin
+        if isnothing(found)
+            @floop ex for letter in letters if isnothing(found)
+                push!(loop_tasks[8][threadid()], Int(letter))
+                task_time = @timed begin
+                    local_str = fill('\0',8)
+                    local_str[1] = letter
+                    for letter in letters if isnothing(found)
+                        local_str[2] = letter
+                        for letter in letters if isnothing(found)
+                            local_str[3] = letter
+                            for letter in letters if isnothing(found)
+                                local_str[4] = letter
+                                for letter in letters if isnothing(found)
+                                    local_str[5] = letter
+                                    for letter in letters if isnothing(found)
+                                        local_str[6] = letter
+                                        for letter in letters if isnothing(found)
+                                            local_str[7] = letter
+                                            for letter in letters
+                                                local_str[8] = letter
+                                                hash2 = md5(String(local_str))
+                                                if hash1 == hash2
+                                                    lock(lk) do
+                                                        found = String(local_str)
+                                                    end
+                                                    break
+                                                end
+                                            end
+                                        end end
+                                    end end
+                                end end
+                            end end
+                        end end
+                    end end
+                end
+                push!(suite["loop_8_tasks"][threadid()], task_time)
             end end
         end
     end
@@ -846,51 +878,35 @@ function debug_brute_force_threads(
     )
     lk = ReentrantLock()
     found = nothing
+    suite["loop_1_tasks"] = [NamedTuple[] for _ in 1:nthreads()]
     suite["loop_1"] = @timed begin
         @threads for letter in letters if isnothing(found)
             push!(loop_tasks[1][threadid()], Int(letter))
-            local_str = fill('\0',1)
-            local_str[1] = letter
-            hash2 = md5(String(local_str))
-            if hash1 == hash2
-                lock(lk) do
-                    found = String(local_str)
+            task_time = @timed begin
+                local_str = fill('\0',1)
+                local_str[1] = letter
+                hash2 = md5(String(local_str))
+                if hash1 == hash2
+                    lock(lk) do
+                        found = String(local_str)
+                    end
+                    break
                 end
-                break
             end
+            push!(suite["loop_1_tasks"][threadid()], task_time)
         end end
     end
 
+    suite["loop_2_tasks"] = [NamedTuple[] for _ in 1:nthreads()]
     suite["loop_2"] = @timed begin
         if isnothing(found)
             @threads for letter in letters if isnothing(found)
                 push!(loop_tasks[2][threadid()], Int(letter))
-                local_str = fill('\0',2)
-                local_str[1] = letter
-                for letter in letters
-                    local_str[2] = letter
-                    hash2 = md5(String(local_str))
-                    if hash1 == hash2
-                        lock(lk) do
-                            found = String(local_str)
-                        end
-                        break
-                    end
-                end
-            end end   
-        end
-    end
-
-    suite["loop_3"] = @timed begin
-        if isnothing(found)
-            @threads for letter in letters if isnothing(found)
-                push!(loop_tasks[3][threadid()], Int(letter))
-                local_str = fill('\0',3)
-                local_str[1] = letter
-                for letter in letters if isnothing(found)
-                    local_str[2] = letter
+                task_time = @timed begin
+                    local_str = fill('\0',2)
+                    local_str[1] = letter
                     for letter in letters
-                        local_str[3] = letter
+                        local_str[2] = letter
                         hash2 = md5(String(local_str))
                         if hash1 == hash2
                             lock(lk) do
@@ -899,23 +915,24 @@ function debug_brute_force_threads(
                             break
                         end
                     end
-                end end
-            end end
+                end
+                push!(suite["loop_2_tasks"][threadid()], task_time)
+            end end   
         end
     end
 
-    suite["loop_4"] = @timed begin
+    suite["loop_3_tasks"] = [NamedTuple[] for _ in 1:nthreads()]
+    suite["loop_3"] = @timed begin
         if isnothing(found)
             @threads for letter in letters if isnothing(found)
-                push!(loop_tasks[4][threadid()], Int(letter))
-                local_str = fill('\0',4)
-                local_str[1] = letter
-                for letter in letters if isnothing(found)
-                    local_str[2] = letter
+                push!(loop_tasks[3][threadid()], Int(letter))
+                task_time = @timed begin
+                    local_str = fill('\0',3)
+                    local_str[1] = letter
                     for letter in letters if isnothing(found)
-                        local_str[3] = letter
+                        local_str[2] = letter
                         for letter in letters
-                            local_str[4] = letter
+                            local_str[3] = letter
                             hash2 = md5(String(local_str))
                             if hash1 == hash2
                                 lock(lk) do
@@ -925,25 +942,26 @@ function debug_brute_force_threads(
                             end
                         end
                     end end
-                end end
+                end
+                push!(suite["loop_3_tasks"][threadid()], task_time)
             end end
         end
     end
 
-    suite["loop_5"] = @timed begin
+    suite["loop_4_tasks"] = [NamedTuple[] for _ in 1:nthreads()]
+    suite["loop_4"] = @timed begin
         if isnothing(found)
             @threads for letter in letters if isnothing(found)
-                push!(loop_tasks[5][threadid()], Int(letter))
-                local_str = fill('\0',5)
-                local_str[1] = letter
-                for letter in letters if isnothing(found)
-                    local_str[2] = letter
+                push!(loop_tasks[4][threadid()], Int(letter))
+                task_time = @timed begin
+                    local_str = fill('\0',4)
+                    local_str[1] = letter
                     for letter in letters if isnothing(found)
-                        local_str[3] = letter
+                        local_str[2] = letter
                         for letter in letters if isnothing(found)
-                            local_str[4] = letter
+                            local_str[3] = letter
                             for letter in letters
-                                local_str[5] = letter
+                                local_str[4] = letter
                                 hash2 = md5(String(local_str))
                                 if hash1 == hash2
                                     lock(lk) do
@@ -954,27 +972,28 @@ function debug_brute_force_threads(
                             end
                         end end
                     end end
-                end end
+                end
+                push!(suite["loop_4_tasks"][threadid()], task_time)
             end end
         end
     end
 
-    suite["loop_6"] = @timed begin
+    suite["loop_5_tasks"] = [NamedTuple[] for _ in 1:nthreads()]
+    suite["loop_5"] = @timed begin
         if isnothing(found)
             @threads for letter in letters if isnothing(found)
-                push!(loop_tasks[6][threadid()], Int(letter))
-                local_str = fill('\0',6)
-                local_str[1] = letter
-                for letter in letters if isnothing(found)
-                    local_str[2] = letter
+                push!(loop_tasks[5][threadid()], Int(letter))
+                task_time = @timed begin
+                    local_str = fill('\0',5)
+                    local_str[1] = letter
                     for letter in letters if isnothing(found)
-                        local_str[3] = letter
+                        local_str[2] = letter
                         for letter in letters if isnothing(found)
-                            local_str[4] = letter
+                            local_str[3] = letter
                             for letter in letters if isnothing(found)
-                                local_str[5] = letter
+                                local_str[4] = letter
                                 for letter in letters
-                                    local_str[6] = letter
+                                    local_str[5] = letter
                                     hash2 = md5(String(local_str))
                                     if hash1 == hash2
                                         lock(lk) do
@@ -986,29 +1005,30 @@ function debug_brute_force_threads(
                             end end
                         end end
                     end end
-                end end
+                end
+                push!(suite["loop_5_tasks"][threadid()], task_time)
             end end
         end
     end
 
-    suite["loop_7"] = @timed begin
+    suite["loop_6_tasks"] = [NamedTuple[] for _ in 1:nthreads()]
+    suite["loop_6"] = @timed begin
         if isnothing(found)
             @threads for letter in letters if isnothing(found)
-                push!(loop_tasks[7][threadid()], Int(letter))
-                local_str = fill('\0',7)
-                local_str[1] = letter
-                for letter in letters if isnothing(found)
-                    local_str[2] = letter
+                push!(loop_tasks[6][threadid()], Int(letter))
+                task_time = @timed begin
+                    local_str = fill('\0',6)
+                    local_str[1] = letter
                     for letter in letters if isnothing(found)
-                        local_str[3] = letter
+                        local_str[2] = letter
                         for letter in letters if isnothing(found)
-                            local_str[4] = letter
+                            local_str[3] = letter
                             for letter in letters if isnothing(found)
-                                local_str[5] = letter
+                                local_str[4] = letter
                                 for letter in letters if isnothing(found)
-                                    local_str[6] = letter
+                                    local_str[5] = letter
                                     for letter in letters
-                                        local_str[7] = letter
+                                        local_str[6] = letter
                                         hash2 = md5(String(local_str))
                                         if hash1 == hash2
                                             lock(lk) do
@@ -1021,31 +1041,32 @@ function debug_brute_force_threads(
                             end end
                         end end
                     end end
-                end end
+                end
+                push!(suite["loop_6_tasks"][threadid()], task_time)
             end end
         end
     end
 
-    suite["loop_8"] = @timed begin
+    suite["loop_7_tasks"] = [NamedTuple[] for _ in 1:nthreads()]
+    suite["loop_7"] = @timed begin
         if isnothing(found)
             @threads for letter in letters if isnothing(found)
-                push!(loop_tasks[8][threadid()], Int(letter))
-                local_str = fill('\0',8)
-                local_str[1] = letter
-                for letter in letters if isnothing(found)
-                    local_str[2] = letter
+                push!(loop_tasks[7][threadid()], Int(letter))
+                task_time = @timed begin
+                    local_str = fill('\0',7)
+                    local_str[1] = letter
                     for letter in letters if isnothing(found)
-                        local_str[3] = letter
+                        local_str[2] = letter
                         for letter in letters if isnothing(found)
-                            local_str[4] = letter
+                            local_str[3] = letter
                             for letter in letters if isnothing(found)
-                                local_str[5] = letter
+                                local_str[4] = letter
                                 for letter in letters if isnothing(found)
-                                    local_str[6] = letter
+                                    local_str[5] = letter
                                     for letter in letters if isnothing(found)
-                                        local_str[7] = letter
+                                        local_str[6] = letter
                                         for letter in letters
-                                            local_str[8] = letter
+                                            local_str[7] = letter
                                             hash2 = md5(String(local_str))
                                             if hash1 == hash2
                                                 lock(lk) do
@@ -1059,7 +1080,50 @@ function debug_brute_force_threads(
                             end end
                         end end
                     end end
-                end end
+                end
+                push!(suite["loop_7_tasks"][threadid()], task_time)
+            end end
+        end
+    end
+
+    suite["loop_8_tasks"] = [NamedTuple[] for _ in 1:nthreads()]
+    suite["loop_8"] = @timed begin
+        if isnothing(found)
+            @threads for letter in letters if isnothing(found)
+                push!(loop_tasks[8][threadid()], Int(letter))
+                task_time = @timed begin
+                    local_str = fill('\0',8)
+                    local_str[1] = letter
+                    for letter in letters if isnothing(found)
+                        local_str[2] = letter
+                        for letter in letters if isnothing(found)
+                            local_str[3] = letter
+                            for letter in letters if isnothing(found)
+                                local_str[4] = letter
+                                for letter in letters if isnothing(found)
+                                    local_str[5] = letter
+                                    for letter in letters if isnothing(found)
+                                        local_str[6] = letter
+                                        for letter in letters if isnothing(found)
+                                            local_str[7] = letter
+                                            for letter in letters
+                                                local_str[8] = letter
+                                                hash2 = md5(String(local_str))
+                                                if hash1 == hash2
+                                                    lock(lk) do
+                                                        found = String(local_str)
+                                                    end
+                                                    break
+                                                end
+                                            end
+                                        end end
+                                    end end
+                                end end
+                            end end
+                        end end
+                    end end
+                end
+                push!(suite["loop_8_tasks"][threadid()], task_time)
             end end
         end
     end
