@@ -162,28 +162,30 @@ function debug_friendly_numbers(
     den = zeros(Int64, last)
     result_a = zeros(Int64, last)
     result_b = zeros(Int64, last)
-    for i in start:stop
-        ii = i - start
-        sum = 1 + i
-        the_num[ii+1] = i
-        done = i
-        factor = 2
+    suite["loop"] = @timed begin
+        for i in start:stop
+            ii = i - start
+            sum = 1 + i
+            the_num[ii+1] = i
+            done = i
+            factor = 2
 
-        while (factor < done)
-            if i % factor == 0
-                sum += factor + div(i, factor)
-                done = div(i, factor) 
-                if done == factor
-                    sum -= factor
+            while (factor < done)
+                if i % factor == 0
+                    sum += factor + div(i, factor)
+                    done = div(i, factor) 
+                    if done == factor
+                        sum -= factor
+                    end
                 end
+                factor += 1
             end
-            factor += 1
+            num[ii+1] = sum
+            den[ii+1] = i
+            n = gcd(num[ii+1], den[ii+1])
+            num[ii+1] = div(num[ii+1], n)
+            den[ii+1] = div(den[ii+1], n)
         end
-        num[ii+1] = sum
-        den[ii+1] = i
-        n = gcd(num[ii+1], den[ii+1])
-        num[ii+1] = div(num[ii+1], n)
-        den[ii+1] = div(den[ii+1], n)
     end
     n_result = 0
     for i in 0:last-1
