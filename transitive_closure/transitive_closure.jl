@@ -70,10 +70,12 @@ function warshall!(nNodes::Int64, bytes_per_row::Int64, graph::Matrix{UInt8};
     for c in 0:nNodes-1
         c_int_div = div(c,8)
         column_bit = c_remainder_lookup[c%8]
-        for r in 0:nNodes-1
-            if (r != c && (graph[r+1, c_int_div+1]&column_bit != 0))
-                for j in 0:bytes_per_row-1
-                    graph[r+1,j+1] = graph[r+1,j+1] | graph[c+1, j+1]
+        suite["loop_"*str(c)] = @timed begin
+            for r in 0:nNodes-1
+                if (r != c && (graph[r+1, c_int_div+1]&column_bit != 0))
+                    for j in 0:bytes_per_row-1
+                        graph[r+1,j+1] = graph[r+1,j+1] | graph[c+1, j+1]
+                    end
                 end
             end
         end
@@ -88,12 +90,18 @@ function warshall_floops!(nNodes::Int64, bytes_per_row::Int64, graph::Matrix{UIn
     for c in 0:nNodes-1
         c_int_div = div(c,8)
         column_bit = c_remainder_lookup[c%8]
-        @floop ex for r in 0:nNodes-1
-            push!(task_distribution[threadid()], r)
-            if (r != c && (graph[r+1, c_int_div+1]&column_bit != 0))
-                for j in 0:bytes_per_row-1
-                    graph[r+1,j+1] = graph[r+1,j+1] | graph[c+1, j+1]
+        suite[string("loop_", c, "_tasks")] = [NamedTuple[] for _ in 1:nthreads()]
+        suite[string("loop_", c)] = @timed begin
+            @floop ex for r in 0:nNodes-1
+                push!(task_distribution[threadid()], r)
+                task_time = @timed begin
+                    if (r != c && (graph[r+1, c_int_div+1]&column_bit != 0))
+                        for j in 0:bytes_per_row-1
+                            graph[r+1,j+1] = graph[r+1,j+1] | graph[c+1, j+1]
+                        end
+                    end
                 end
+                push!(suite[string("loop_", c, "_tasks")][threadid()], task_time)
             end
         end
     end
@@ -107,12 +115,18 @@ function warshall_threads!(nNodes::Int64, bytes_per_row::Int64, graph::Matrix{UI
     for c in 0:nNodes-1
         c_int_div = div(c,8)
         column_bit = c_remainder_lookup[c%8]
-        @threads for r in 0:nNodes-1
-            push!(task_distribution[threadid()], r)
-            if (r != c && (graph[r+1, c_int_div+1]&column_bit != 0))
-                for j in 0:bytes_per_row-1
-                    graph[r+1,j+1] = graph[r+1,j+1] | graph[c+1, j+1]
+        suite[string("loop_", c, "_tasks")] = [NamedTuple[] for _ in 1:nthreads()]
+        suite["loop_"*str(c)] = @timed begin
+            @threads for r in 0:nNodes-1
+                push!(task_distribution[threadid()], r)
+                task_time = @timed begin
+                    if (r != c && (graph[r+1, c_int_div+1]&column_bit != 0))
+                        for j in 0:bytes_per_row-1
+                            graph[r+1,j+1] = graph[r+1,j+1] | graph[c+1, j+1]
+                        end
+                    end
                 end
+                push!(suite[string("loop_", c, "_tasks")][threadid()], task_time)
             end
         end
     end
