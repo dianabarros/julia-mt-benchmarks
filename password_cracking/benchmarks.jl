@@ -123,12 +123,12 @@ for run in runs
     end
 end
 
-open("pw_craking_task_distribution.txt", "w") do io
+open(string("pw_craking_task_distribution_",nthreads(),".txt"), "w") do io
     print(io, task_distribution)
 end
 
 if length(task_times) != 0
-    open("mutually_friends_task_times.txt", "w") do io
+    open(string("pw_craking_task_times_",nthreads(),".txt"), "w") do io
         print(io, task_times)
     end
 end
