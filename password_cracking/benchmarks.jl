@@ -1,5 +1,5 @@
 import Pkg
-Pkg.activate(pwd())
+Pkg.activate("password_cracking")
 
 using DataFrames, CSV
 

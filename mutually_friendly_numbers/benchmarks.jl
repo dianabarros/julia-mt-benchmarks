@@ -1,5 +1,5 @@
 import Pkg
-Pkg.activate(pwd())
+Pkg.activate("mutually_friendly_numbers")
 
 using DataFrames, CSV
 
