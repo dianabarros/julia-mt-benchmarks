@@ -35,7 +35,7 @@ end
 
 iterations = 1
 
-df = DataFrame(fiteration = Int64[], unc=String[], input=String[], executor=Vector{Union{String, Missing}}(), 
+df = DataFrame(iteration = Int64[], func=String[], input=String[], executor=Vector{Union{String, Missing}}(), 
     basesize = Vector{Union{Int64,Missing}}(), n_threads=Int64[], total_bytes=Int64[], total_time=Float64[]
     )
 df_file_name = "mutually_friends_results.csv"
