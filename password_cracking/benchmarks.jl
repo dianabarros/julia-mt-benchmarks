@@ -82,7 +82,7 @@ df = DataFrame(iteration = Int64[], func=String[], input=String[], executor=Vect
                 total_time=Float64[], loop_1_time=Float64[], loop_2_time=Float64[], loop_3_time=Float64[],
                 loop_4_time=Float64[], loop_5_time=Float64[], loop_6_time=Float64[], loop_7_time=Float64[],
                 loop_8_time=Float64[])
-df_file_name = "pw_cracking_results.csv"
+df_file_name = string("pw_cracking_results_",nthreads(),".csv")
 
 task_distribution = []
 task_times = []
