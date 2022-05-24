@@ -1,5 +1,5 @@
 import Pkg
-Pkg.activate(".")
+Pkg.activate(pwd())
 
 using DataFrames, CSV
 
@@ -35,7 +35,7 @@ end
 
 iterations = 1
 
-df = DataFrame(func=String[], input=String[], executor=Vector{Union{String, Missing}}(), 
+df = DataFrame(fiteration = Int64[], unc=String[], input=String[], executor=Vector{Union{String, Missing}}(), 
     basesize = Vector{Union{Int64,Missing}}(), n_threads=Int64[], total_bytes=Int64[], total_time=Float64[]
     )
 df_file_name = "mutually_friends_results.csv"
@@ -56,7 +56,7 @@ for run in runs
         if haskey(bench_sample.suite, "task")
             it_ttimes[it] = bench_sample.suite["task"]
         end
-        push!(df, (func=String(Symbol(run.f)), input=run.size, 
+        push!(df, (iteration=it, func=String(Symbol(run.f)), input=run.size, 
             executor=isnothing(run.ex) ? missing : String(Symbol(run.ex)), 
             basesize = isnothing(run.ex) ? missing : basesize, n_threads=nthreads(), total_bytes=bench_sample.suite["app"].bytes, 
             total_time=bench_sample.suite["app"].time))

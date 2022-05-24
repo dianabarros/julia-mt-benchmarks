@@ -1,5 +1,5 @@
 import Pkg
-Pkg.activate(".")
+Pkg.activate(pwd())
 
 using DataFrames, CSV
 
@@ -77,7 +77,7 @@ end
 
 iterations = 1
 
-df = DataFrame(func=String[], input=String[], executor=Vector{Union{String,Missing}}(), 
+df = DataFrame(iteration = Int64[], func=String[], input=String[], executor=Vector{Union{String,Missing}}(), 
                 basesize=Vector{Union{Int64,Missing}}(), n_threads=Int64[], total_bytes=Int64[], 
                 total_time=Float64[], loop_1_time=Float64[], loop_2_time=Float64[], loop_3_time=Float64[],
                 loop_4_time=Float64[], loop_5_time=Float64[], loop_6_time=Float64[], loop_7_time=Float64[],
@@ -104,7 +104,7 @@ for run in runs
                 it_ttime[it][key] = value
             end
         end
-        push!(df, (func=String(Symbol(run.f)), input=run.pw, executor=isnothing(run.ex) ? missing : String(Symbol(run.ex)), basesize=isnothing(run.basesize) ? missing : run.basesize, 
+        push!(df, (iteration=it, func=String(Symbol(run.f)), input=run.pw, executor=isnothing(run.ex) ? missing : String(Symbol(run.ex)), basesize=isnothing(run.basesize) ? missing : run.basesize, 
             n_threads=nthreads(), total_bytes=bench_sample.suite["app"].bytes, total_time=bench_sample.suite["app"].time,
             loop_1_time=haskey(bench_sample.suite, "loop_1") ? bench_sample.suite["loop_1"].time : 0.0, 
             loop_2_time=haskey(bench_sample.suite, "loop_2") ? bench_sample.suite["loop_2"].time : 0.0,
