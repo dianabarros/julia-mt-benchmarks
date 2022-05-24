@@ -47,7 +47,7 @@ for run in runs
     it_dist = Dict()
     it_ttimes = Dict()
     for it in 1:iterations
-        @show run
+        print("run = ", run) 
         basesize=div(run.stop-run.start, nthreads())
         bench_sample = debug(
             run.f, run.start, run.stop, ex=isnothing(run.ex) ? nothing : run.ex(basesize=basesize), check_sequential=run.check_sequential
