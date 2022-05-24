@@ -1,3 +1,6 @@
+import Pkg
+Pkg.activate(".")
+
 using DataFrames, CSV
 
 include("brute_force_password_cracking.jl")
@@ -49,7 +52,7 @@ basesizes = [div(length(letters), nthreads())]
 
 executors = [ThreadedEx, WorkStealingEx, DepthFirstEx, TaskPoolEx, NondeterministicEx]
 
-check_sequential = true
+check_sequential = false
 
 runs = []
 
@@ -57,11 +60,16 @@ for pw_size in keys(inputs)
     for pw in collect(keys(inputs[pw_size]))[1:input_samples]
         hash_str = inputs[pw_size][pw]
         for func in funcs
-            for exec in executors
-                for basesize in basesizes
-                    run = (f=func, pw=pw, hash_str=hash_str, ex=exec, basesize=basesize, check_sequential=check_sequential)
-                    push!(runs, run)
+            if func == debug_brute_force_floop
+                for exec in executors
+                    for basesize in basesizes
+                        run = (f=func, pw=pw, hash_str=hash_str, ex=exec, basesize=basesize, check_sequential=check_sequential)
+                        push!(runs, run)
+                    end
                 end
+            else
+                run = (f=func, pw=pw, hash_str=hash_str, ex=nothing, basesize=nothing, check_sequential=check_sequential)
+                push!(runs, run)
             end
         end
     end
@@ -69,8 +77,8 @@ end
 
 iterations = 1
 
-df = DataFrame(func=String[], input=String[], executor=String[], 
-                basesize=Int64[], n_threads=Int64[], total_bytes=Int64[], 
+df = DataFrame(func=String[], input=String[], executor=Vector{Union{String,Missing}}(), 
+                basesize=Vector{Union{Int64,Missing}}(), n_threads=Int64[], total_bytes=Int64[], 
                 total_time=Float64[], loop_1_time=Float64[], loop_2_time=Float64[], loop_3_time=Float64[],
                 loop_4_time=Float64[], loop_5_time=Float64[], loop_6_time=Float64[], loop_7_time=Float64[],
                 loop_8_time=Float64[])
@@ -85,18 +93,18 @@ for run in runs
     for it in 1:iterations
         @show run
         bench_sample = debug_crack_password(
-            run.f, run.hash_str, ex=run.ex(basesize=run.basesize), check_sequential=run.check_sequential
+            run.f, run.hash_str, ex=isnothing(run.ex) ? nothing : run.ex(basesize=run.basesize), check_sequential=run.check_sequential
         )
         it_dist[it] = bench_sample.loop_tasks
         for (key, value) in bench_sample.suite
-            if "tasks" in key
+            if !isnothing(findfirst("tasks", key))
                 if !haskey(it_ttime,it) 
                     it_ttime[it] = Dict()
                 end
                 it_ttime[it][key] = value
             end
         end
-        push!(df, (func=String(Symbol(run.f)), input=run.pw, executor=String(Symbol(run.ex)), basesize=run.basesize, 
+        push!(df, (func=String(Symbol(run.f)), input=run.pw, executor=isnothing(run.ex) ? missing : String(Symbol(run.ex)), basesize=isnothing(run.basesize) ? missing : run.basesize, 
             n_threads=nthreads(), total_bytes=bench_sample.suite["app"].bytes, total_time=bench_sample.suite["app"].time,
             loop_1_time=haskey(bench_sample.suite, "loop_1") ? bench_sample.suite["loop_1"].time : 0.0, 
             loop_2_time=haskey(bench_sample.suite, "loop_2") ? bench_sample.suite["loop_2"].time : 0.0,

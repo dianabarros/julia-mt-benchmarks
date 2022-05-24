@@ -314,6 +314,7 @@ function debug(f::T, start::Int64, stop::Int64;
     ) where T
     task_distribution = [Int64[] for _ in 1:nthreads()]
     suite = Dict()
+    suite["task"] = [NamedTuple[] for _ in 1:nthreads()]
     suite["app"] = @timed f(start, stop, ex=ex, task_distribution=task_distribution, suite=suite)
     correct_results = nothing
     if !isnothing(check_sequential) && check_sequential

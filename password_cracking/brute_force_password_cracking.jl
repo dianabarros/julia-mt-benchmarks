@@ -5,7 +5,7 @@ using Base.Threads
 
 mutable struct BenchmarkSample
     loop_tasks::Vector{Vector{Vector{Int64}}}
-    suite::Dict{String,Union{NamedTuple,Vector{Vector{NamedTuple}}}}
+    suite::Dict{String,Union{NamedTuple, Vector{Vector{NamedTuple}}}}
     correct_results::Union{Bool,Nothing}
 end
 BenchmarkSample(loop_tasks, suite) = BenchmarkSample(loop_tasks, suite, nothing)
@@ -615,8 +615,8 @@ end
 function debug_brute_force_floop(
         hash1::Vector{UInt8}; ex::Union{FoldsThreads.FoldsBase.Executor,Nothing}=nothing,
         loop_tasks::Union{Vector{Vector{Vector{Int64}}},Nothing}=nothing,
-        suite::Union{Dict{String,NamedTuple},Nothing}
-    )
+        suite::Dict{T}
+    ) where T
     lk = ReentrantLock()
     found = nothing
     suite["loop_1_tasks"] = [NamedTuple[] for _ in 1:nthreads()]
@@ -874,8 +874,8 @@ end
 function debug_brute_force_threads(
         hash1::Vector{UInt8}; ex::Union{FoldsThreads.FoldsBase.Executor,Nothing}=nothing,
         loop_tasks::Union{Vector{Vector{Vector{Int64}}},Nothing}=nothing,
-        suite::Union{Dict{String,NamedTuple},Nothing}
-    )
+        suite::Dict{T}
+    ) where T
     lk = ReentrantLock()
     found = nothing
     suite["loop_1_tasks"] = [NamedTuple[] for _ in 1:nthreads()]
@@ -1157,7 +1157,7 @@ function debug_crack_password(
         check_sequential::Union{Bool,Nothing}=nothing
     ) where T
     loop_tasks = [[Int64[] for _ in 1:nthreads()] for _ in 1:8]
-    suite = Dict{String,NamedTuple}()
+    suite = Dict{String,Union{NamedTuple, Vector{Vector{NamedTuple}}}}()
     hash1 = hex2bytes(hash1_str)
     suite["app"] = @timed f(hash1, ex=ex, loop_tasks=loop_tasks, suite=suite)
     correct_results = nothing
