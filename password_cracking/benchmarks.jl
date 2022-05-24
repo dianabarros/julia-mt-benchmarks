@@ -91,7 +91,7 @@ for run in runs
     it_dist = Dict()
     it_ttime = Dict()
     for it in 1:iterations
-        print("run = ", run)
+        println("run = ", run)
         bench_sample = debug_crack_password(
             run.f, run.hash_str, ex=isnothing(run.ex) ? nothing : run.ex(basesize=run.basesize), check_sequential=run.check_sequential
         )
