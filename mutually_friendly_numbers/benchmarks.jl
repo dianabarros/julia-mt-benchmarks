@@ -36,7 +36,8 @@ end
 iterations = 1
 
 df = DataFrame(iteration = Int64[], func=String[], input=String[], executor=Vector{Union{String, Missing}}(), 
-    basesize = Vector{Union{Int64,Missing}}(), n_threads=Int64[], total_bytes=Int64[], total_time=Float64[]
+    basesize = Vector{Union{Int64,Missing}}(), n_threads=Int64[], total_bytes=Int64[], total_time=Float64[],
+    main_loop_bytes=Int64[], main_loop_time=Float64[]
     )
 df_file_name = string("mutually_friends_results_",nthreads(),".csv")
 
@@ -59,7 +60,7 @@ for run in runs
         push!(df, (iteration=it, func=String(Symbol(run.f)), input=run.size, 
             executor=isnothing(run.ex) ? missing : String(Symbol(run.ex)), 
             basesize = isnothing(run.ex) ? missing : basesize, n_threads=nthreads(), total_bytes=bench_sample.suite["app"].bytes, 
-            total_time=bench_sample.suite["app"].time))
+            total_time=bench_sample.suite["app"].time,main_loop_bytes=bench_sample.suite["loop"].bytes, main_loop_time=bench_sample.suite["loop"].time))
         CSV.write(df_file_name, df)
     end
     push!(task_distribution, (run=run, dist=it_dist))
