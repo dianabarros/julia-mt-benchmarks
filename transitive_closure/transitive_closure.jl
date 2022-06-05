@@ -132,20 +132,20 @@ function warshall_threads!(nNodes::Int64, bytes_per_row::Int64, graph::Matrix{UI
     end
 end
 
-function debug(f::T, file_path::String; 
+function debug(f::T, nNodes::Int64, bytes_per_row::Int64, graph; 
         ex::N=nothing, 
         check_sequential::Union{Bool,Nothing}=nothing
     ) where T where N
     task_distribution = [Int64[] for _ in 1:nthreads()]
     suite = Dict{String,Union{NamedTuple, Vector{Vector{NamedTuple}}}}()
-    nNodes, bytes_per_row, graph = read_file(file_path)
+    # nNodes, bytes_per_row, graph = read_file(file_path)
     graph_seq = copy(graph)
     correct_results = nothing
     suite["app"] = @timed f(nNodes, bytes_per_row, graph, 
-        ex=ex(basesize=div(nNodes, nthreads())), task_distribution=task_distribution, suite=suite)
+        ex=ex, task_distribution=task_distribution, suite=suite)
     if !isnothing(check_sequential) && check_sequential
         warshall!(nNodes, bytes_per_row, graph_seq,
-            ex=ex(div(nNodes, nthreads())), task_distribution=task_distribution, suite=suite)
+            ex=ex, task_distribution=task_distribution, suite=suite)
         correct_results = graph_seq == graph
     end
     return BenchmarkSample(task_distribution, suite, correct_results)
