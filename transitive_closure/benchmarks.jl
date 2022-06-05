@@ -76,7 +76,7 @@ open(string("transitive_closure_task_distribution_",nthreads(),".txt"), "w") do 
 end
 
 if length(task_times) != 0
-    open(string("mutually_friends_task_times_",nthreads(),".txt"), "w") do io
+    open(string("transitive_closure_task_times_",nthreads(),".txt"), "w") do io
         print(io, task_times)
     end
 end
