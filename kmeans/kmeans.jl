@@ -1,5 +1,9 @@
 # https://www.analyticsvidhya.com/blog/2019/08/comprehensive-guide-k-means-clustering/#h2_1
 
+using FoldsThreads
+using FLoops
+using Base.Threads
+
 using DataFrames
 using CSV
 using Statistics
@@ -50,6 +54,37 @@ function kmeans(X, k)
         new_centroids = find_centroids(X, cluster)
         if iszero(centroids .- new_centroids)
             diff = false
+        else
+            centroids = copy(new_centroids)
+        end
+    end
+    return centroids, cluster
+end
+
+# Probably doesnt work or makes no sense
+function kmeans_floop(X, k, ex)
+    cluster = zeros(size(X,1))
+    random_indices = rand(1:size(X,1), k)
+    centroids = X[random_indices,:]
+    max_iter = 100000
+    for iter in 1:max_iter
+        @floop ex for i in 1:size(X,1)
+            mn_dist = Threads.Atomic{Int}(1000000)
+            for idx in 1:size(centroids,1)
+                sum = 0
+                for dim in 1:size(X,2)
+                    sum += (centroids[idx,dim]-X[i,dim])^2
+                end
+                d = sqrt(sum)
+                if mn_dist > d
+                    mn_dist = d
+                    cluster[i] = idx
+                end
+            end
+        end
+        new_centroids = find_centroids(X, cluster)
+        if iszero(centroids .- new_centroids)
+            break
         else
             centroids = copy(new_centroids)
         end
