@@ -3,7 +3,7 @@ using FLoops
 using Base.Threads
 
 mutable struct BenchmarkSample
-    task_distribution::Vector{Vector{Int64}}
+    task_distribution::Dict{Int64,Vector{Vector{Int64}}}
     suite::Dict{String,Union{NamedTuple, Vector{Vector{NamedTuple}}}}
     correct_results::Union{Bool,Nothing}
 end
@@ -64,7 +64,7 @@ end
 
 function warshall!(nNodes::Int64, bytes_per_row::Int64, graph::Matrix{UInt8};
     ex::Union{FoldsThreads.FoldsBase.Executor,Nothing}=nothing, 
-    task_distribution::Vector{Vector{Int64}},
+    task_distribution::Dict{Int64,Vector{Vector{Int64}}},
     suite::Dict{T}
     ) where T
     for c in 0:nNodes-1
@@ -84,16 +84,17 @@ end
 
 function warshall_floops!(nNodes::Int64, bytes_per_row::Int64, graph::Matrix{UInt8};
         ex::Union{FoldsThreads.FoldsBase.Executor,Nothing}=nothing, 
-        task_distribution::Union{Vector{Vector{Int64}},Nothing}=nothing,
+        task_distribution::Dict{Int64,Vector{Vector{Int64}}}=nothing,
         suite::Union{Dict{T},Nothing}=nothing
     ) where T
     for c in 0:nNodes-1
         c_int_div = div(c,8)
         column_bit = c_remainder_lookup[c%8]
         suite[string("loop_", c, "_tasks")] = [NamedTuple[] for _ in 1:nthreads()]
+        task_distribution[c] = [Int64[] for _ in 1:Threads.nthreads()]
         suite[string("loop_", c)] = @timed begin
             @floop ex for r in 0:nNodes-1
-                push!(task_distribution[threadid()], r)
+                push!(task_distribution[c][threadid()], r)
                 task_time = @timed begin
                     if (r != c && (graph[r+1, c_int_div+1]&column_bit != 0))
                         for j in 0:bytes_per_row-1
@@ -109,16 +110,17 @@ end
 
 function warshall_threads!(nNodes::Int64, bytes_per_row::Int64, graph::Matrix{UInt8};
         ex::Union{FoldsThreads.FoldsBase.Executor,Nothing}=nothing, 
-        task_distribution::Union{Vector{Vector{Int64}},Nothing}=nothing,
+        task_distribution::Dict{Int64,Vector{Vector{Int64}}}=nothing,
         suite::Union{Dict{T},Nothing}=nothing
     ) where T
     for c in 0:nNodes-1
         c_int_div = div(c,8)
         column_bit = c_remainder_lookup[c%8]
         suite[string("loop_", c, "_tasks")] = [NamedTuple[] for _ in 1:nthreads()]
+        task_distribution[c] = [Int64[] for _ in 1:Threads.nthreads()]
         suite[string("loop_", c)] = @timed begin
             @threads for r in 0:nNodes-1
-                push!(task_distribution[threadid()], r)
+                push!(task_distribution[c][threadid()], r)
                 task_time = @timed begin
                     if (r != c && (graph[r+1, c_int_div+1]&column_bit != 0))
                         for j in 0:bytes_per_row-1
@@ -136,9 +138,8 @@ function debug(f::T, nNodes::Int64, bytes_per_row::Int64, graph;
         ex::N=nothing, 
         check_sequential::Union{Bool,Nothing}=nothing
     ) where T where N
-    task_distribution = [Int64[] for _ in 1:nthreads()]
+    task_distribution = Dict{Int64,Vector{Vector{Int64}}}()
     suite = Dict{String,Union{NamedTuple, Vector{Vector{NamedTuple}}}}()
-    # nNodes, bytes_per_row, graph = read_file(file_path)
     graph_seq = copy(graph)
     correct_results = nothing
     suite["app"] = @timed f(nNodes, bytes_per_row, graph, 
