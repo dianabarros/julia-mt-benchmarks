@@ -7,8 +7,8 @@ include("transitive_closure.jl")
 
 inputs = Dict(
     "small" => "transitive_closure/1280_nodes.in",
-    # "medium" => "transitive_closure/2560_nodes.in",
-    # "large" => "transitive_closure/transitive_closure.in"
+    "medium" => "transitive_closure/2560_nodes.in",
+    "large" => "transitive_closure/transitive_closure.in"
 )
 
 funcs = [warshall!, warshall_threads!, warshall_floops!]
@@ -34,7 +34,7 @@ for (size, file_path) in inputs
     end
 end
 
-iterations = 1
+iterations = 10
 
 df = DataFrame(func=String[], input=String[], executor=Vector{Union{String,Missing}}(), n_threads=Int64[], 
                 basesize=Vector{Union{Int64,Missing}}(),total_bytes=Int64[], total_time=Float64[])
