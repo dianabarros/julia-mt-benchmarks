@@ -7,9 +7,9 @@ include("friendly_numbers.jl")
 
 # TODO: Pick better inputs
 inputs = Dict(
-    "small" => (0, 10000),
-    "medium" => (0, 50000),
-    "large" => (0, 100000)
+    "small" => (0, 50000),
+    "medium" => (0, 100000),
+    "large" => (0, 150000)
 )
 
 funcs =[debug_friendly_numbers, debug_friendly_numbers_threads, debug_friendly_numbers_floop]
@@ -33,7 +33,7 @@ for (size, range) in inputs
     end
 end
 
-iterations = 1
+iterations = 10
 
 df = DataFrame(iteration = Int64[], func=String[], input=String[], executor=Vector{Union{String, Missing}}(), 
     basesize = Vector{Union{Int64,Missing}}(), n_threads=Int64[], total_bytes=Int64[], total_time=Float64[],
