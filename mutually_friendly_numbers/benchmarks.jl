@@ -46,7 +46,7 @@ task_times = []
 
 for run in runs
     it_dist = Dict()
-    it_ttimes = Dict()
+    it_ttime = Dict()
     for it in 1:iterations
         println("run = ", run) 
         basesize=div(run.stop-run.start, nthreads())
@@ -55,7 +55,7 @@ for run in runs
         )
         it_dist[it] = bench_sample.task_distribution
         if haskey(bench_sample.suite, "task")
-            it_ttimes[it] = bench_sample.suite["task"]
+            it_ttime[it] = bench_sample.suite["task"]
         end
         push!(df, (iteration=it, func=String(Symbol(run.f)), input=run.size, 
             executor=isnothing(run.ex) ? missing : String(Symbol(run.ex)), 
@@ -64,8 +64,8 @@ for run in runs
         CSV.write(df_file_name, df)
     end
     push!(task_distribution, (run=run, dist=it_dist))
-    if length(it_dist) != 0
-        push!(task_times, (run=run, dist=it_dist))
+    if length(it_ttime) != 0
+        push!(task_times, (run=run, dist=it_ttime))
     end
 end
 

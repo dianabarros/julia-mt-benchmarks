@@ -119,8 +119,8 @@ for run in runs
         CSV.write(df_file_name, df)
     end
     push!(task_distribution, (run=run, dist=it_dist))
-    if length(it_dist) != 0
-        push!(task_times, (run=run, dist=it_dist))
+    if length(it_ttime) != 0
+        push!(task_times, (run=run, dist=it_ttime))
     end
 end
 
