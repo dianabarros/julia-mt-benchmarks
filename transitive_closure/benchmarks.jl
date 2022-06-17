@@ -40,9 +40,7 @@ df = DataFrame(func=String[], input=String[], executor=Vector{Union{String,Missi
                 basesize=Vector{Union{Int64,Missing}}(),total_bytes=Int64[], total_time=Float64[])
 df_file_name = string("transitive_closure_results_",nthreads(),".csv")
 
-task_distribution = []
-task_times = []
-
+run_counter = 1
 for run in runs
     it_dist = Dict()
     it_ttime = Dict()
@@ -65,18 +63,15 @@ for run in runs
             total_bytes=bench_sample.suite["app"].bytes, total_time=bench_sample.suite["app"].time))
         CSV.write(df_file_name, df)
     end
-    push!(task_distribution, (run=run, dist=it_dist))
-    if length(it_ttime) != 0
-        push!(task_times, (run=run, dist=it_ttime))
+
+    open(string("transitive_closure_task_distribution_",nthreads(), "_", run_counter,".txt"), "w") do io
+        print(io, (run=run, dist=it_dist))
     end
+
+    open(string("transitive_closure_task_times_",nthreads(), "_", run_counter,".txt"), "w") do io
+        print(io, (run=run, dist=it_ttime))
+    end
+    
+    global run_counter+=1
 end
 
-open(string("transitive_closure_task_distribution_",nthreads(),".txt"), "w") do io
-    print(io, task_distribution)
-end
-
-if length(task_times) != 0
-    open(string("transitive_closure_task_times_",nthreads(),".txt"), "w") do io
-        print(io, task_times)
-    end
-end
