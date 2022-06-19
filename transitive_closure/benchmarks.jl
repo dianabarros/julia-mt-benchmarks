@@ -11,11 +11,15 @@ inputs = Dict(
     "large" => "transitive_closure/transitive_closure.in"
 )
 
+if length(ARGS) != 0
+    inputs = Dict(ARGS[1] => inputs[ARGS[1]])
+end
+
 funcs = [warshall!, warshall_threads!, warshall_floops!]
 
 executors = [ThreadedEx, WorkStealingEx, DepthFirstEx, TaskPoolEx, NondeterministicEx]
 
-check_sequential = true
+check_sequential = false
 
 runs = []
 
@@ -36,12 +40,12 @@ end
 
 iterations = 10
 
+df = DataFrame(func=String[], input=String[], executor=Vector{Union{String,Missing}}(), n_threads=Int64[], 
+basesize=Vector{Union{Int64,Missing}}(),total_bytes=Int64[], total_time=Float64[])
+df_input_size = length(ARGS) != 0 ? ARGS[1] : ""
+df_file_name = string("transitive_closure_results_",nthreads(), "_", df_input_size,".csv")
 
-run_counter = 1
 for run in runs
-    df = DataFrame(func=String[], input=String[], executor=Vector{Union{String,Missing}}(), n_threads=Int64[], 
-                basesize=Vector{Union{Int64,Missing}}(),total_bytes=Int64[], total_time=Float64[])
-    df_file_name = string("transitive_closure_results_",nthreads(), "_run_", run_counter,".csv")
     it_dist = Dict()
     it_ttime = Dict()
     GC.gc() # Forcing gc for getting metrics
