@@ -1,6 +1,28 @@
 import Pkg
 Pkg.activate("transitive_closure")
 
+using ArgParse 
+
+function parse_commandline()
+    s = ArgParseSettings()
+
+    @add_arg_table s begin
+        "--inputs"
+        "--funcs"
+        "--executors"
+        "--check_sequential"
+            action = :store_true
+            default = false
+        "--its"
+            arg_type = Int
+            default = 10
+    end
+
+    return parse_args(s)
+end
+
+args = parse_commandline()
+
 using DataFrames, CSV
 
 include("transitive_closure.jl")
@@ -10,16 +32,26 @@ inputs = Dict(
     "medium" => "transitive_closure/2560_nodes.in",
     "large" => "transitive_closure/transitive_closure.in"
 )
-
-if length(ARGS) != 0
-    inputs = Dict(ARGS[1] => inputs[ARGS[1]])
+if !isnothing(args["inputs"])
+    arg_inputs = Dict()
+    for size in eval(Meta.parse(args["inputs"]))
+        arg_inputs[size] = inputs[size]
+    end
+    inputs = arg_inputs
 end
 
 funcs = [warshall!, warshall_threads!, warshall_floops!]
+if !isnothing(args["funcs"])
+    funcs = eval(Meta.parse(args["funcs"]))
+end
 
 executors = [ThreadedEx, WorkStealingEx, DepthFirstEx, TaskPoolEx, NondeterministicEx]
+if !isnothing(args["executors"])
+    executors = eval(Meta.parse(args["executors"]))
+end
 
-check_sequential = false
+iterations = args["its"]
+check_sequential = args["check_sequential"]
 
 runs = []
 
@@ -38,12 +70,9 @@ for (size, file_path) in inputs
     end
 end
 
-iterations = 10
-
 df = DataFrame(func=String[], input=String[], executor=Vector{Union{String,Missing}}(), n_threads=Int64[], 
 basesize=Vector{Union{Int64,Missing}}(),total_bytes=Int64[], total_time=Float64[])
-df_input_size = length(ARGS) != 0 ? ARGS[1] : ""
-df_file_name = string("transitive_closure_results_",nthreads(), "_", df_input_size,".csv")
+df_file_name = string("transitive_closure_results_",nthreads(),".csv")
 
 task_distribution = []
 task_times = []
