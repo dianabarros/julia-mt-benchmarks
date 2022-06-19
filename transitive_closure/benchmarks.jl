@@ -45,6 +45,8 @@ basesize=Vector{Union{Int64,Missing}}(),total_bytes=Int64[], total_time=Float64[
 df_input_size = length(ARGS) != 0 ? ARGS[1] : ""
 df_file_name = string("transitive_closure_results_",nthreads(), "_", df_input_size,".csv")
 
+task_distribution = []
+task_times = []
 for run in runs
     it_dist = Dict()
     it_ttime = Dict()
@@ -69,15 +71,19 @@ for run in runs
         CSV.write(df_file_name, df)
     end
     GC.gc() # Forcing gc for getting metrics
-
-    open(string("transitive_closure_task_distribution_",nthreads(), "_", run_counter,".txt"), "w") do io
-        print(io, (run=run, dist=it_dist))
+    push!(task_distribution, (run=run, dist=it_dist))
+    if length(it_ttime) != 0
+        push!(task_times, (run=run, dist=it_ttime))
     end
+end
 
-    open(string("transitive_closure_task_times_",nthreads(), "_", run_counter,".txt"), "w") do io
-        print(io, (run=run, dist=it_ttime))
+open(string("transitive_closure_task_distribution_",nthreads(), ".txt"), "w") do io
+    print(io, (run=run, dist=task_distribution))
+end
+
+if length(task_times) != 0
+    open(string("transitive_closure_task_times_",nthreads(),".txt"), "w") do io
+        print(io, task_times)
     end
-    
-    global run_counter+=1
 end
 
