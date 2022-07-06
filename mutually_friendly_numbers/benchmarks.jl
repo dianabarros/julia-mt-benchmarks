@@ -1,6 +1,28 @@
 import Pkg
 Pkg.activate("mutually_friendly_numbers")
 
+using ArgParse 
+
+function parse_commandline()
+    s = ArgParseSettings()
+
+    @add_arg_table s begin
+        "--inputs"
+        "--funcs"
+        "--executors"
+        "--check_sequential"
+            action = :store_true
+            default = false
+        "--its"
+            arg_type = Int
+            default = 10
+    end
+
+    return parse_args(s)
+end
+
+args = parse_commandline()
+
 using DataFrames, CSV
 
 include("friendly_numbers.jl")
@@ -11,12 +33,26 @@ inputs = Dict(
     "medium" => (0, 100000),
     "large" => (0, 150000)
 )
+if !isnothing(args["inputs"])
+    arg_inputs = Dict()
+    for size in eval(Meta.parse(args["inputs"]))
+        arg_inputs[size] = inputs[size]
+    end
+    inputs = arg_inputs
+end
 
 funcs =[debug_friendly_numbers, debug_friendly_numbers_threads, debug_friendly_numbers_floop]
+if !isnothing(args["funcs"])
+    funcs = eval(Meta.parse(args["funcs"]))
+end
 
 executors = [ThreadedEx, WorkStealingEx, DepthFirstEx, TaskPoolEx, NondeterministicEx]
+if !isnothing(args["executors"])
+    executors = eval(Meta.parse(args["executors"]))
+end
 
-check_sequential = false
+iterations = args["its"]
+check_sequential = args["check_sequential"]
 
 runs = []
 for (size, range) in inputs
@@ -32,8 +68,6 @@ for (size, range) in inputs
         end
     end
 end
-
-iterations = 10
 
 # compile run
 debug(debug_friendly_numbers, 0, 10)

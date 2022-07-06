@@ -1,6 +1,26 @@
 import Pkg
 Pkg.activate("password_cracking")
 
+function parse_commandline()
+    s = ArgParseSettings()
+
+    @add_arg_table s begin
+        "--inputs"
+        "--funcs"
+        "--executors"
+        "--check_sequential"
+            action = :store_true
+            default = false
+        "--its"
+            arg_type = Int
+            default = 10
+    end
+
+    return parse_args(s)
+end
+
+args = parse_commandline()
+
 using DataFrames, CSV
 
 include("brute_force_password_cracking.jl")
@@ -44,15 +64,30 @@ inputs = Dict(
     )
 )
 
+if !isnothing(args["inputs"])
+    arg_inputs = Dict()
+    for size in eval(Meta.parse(args["inputs"]))
+        arg_inputs[size] = inputs[size]
+    end
+    inputs = arg_inputs
+end
+
 input_samples = 10
 
 funcs = [debug_brute_force, debug_brute_force_threads, debug_brute_force_floop]
+if !isnothing(args["funcs"])
+    funcs = eval(Meta.parse(args["funcs"]))
+end
 
 basesizes = [div(length(letters), nthreads())]
 
 executors = [ThreadedEx, WorkStealingEx, DepthFirstEx, TaskPoolEx, NondeterministicEx]
+if !isnothing(args["executors"])
+    executors = eval(Meta.parse(args["executors"]))
+end
 
-check_sequential = false
+iterations = args["its"]
+check_sequential = args["check_sequential"]
 
 runs = []
 
@@ -74,8 +109,6 @@ for pw_size in keys(inputs)
         end
     end
 end
-
-iterations = 1
 
 # compile run
 debug_crack_password(debug_brute_force,"800618943025315f869e4e1f09471012")
