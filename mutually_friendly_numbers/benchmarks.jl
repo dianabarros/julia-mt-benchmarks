@@ -35,6 +35,11 @@ end
 
 iterations = 10
 
+# compile run
+debug(debug_friendly_numbers, 0, 10)
+debug(debug_friendly_numbers_threads, 0, 10)
+debug(debug_friendly_numbers_floop, 0, 10, ex=ThreadedEx(basesize=2))
+
 df = DataFrame(iteration = Int64[], func=String[], input=String[], executor=Vector{Union{String, Missing}}(), 
     basesize = Vector{Union{Int64,Missing}}(), n_threads=Int64[], total_bytes=Int64[], total_time=Float64[],
     main_loop_bytes=Int64[], main_loop_time=Float64[]

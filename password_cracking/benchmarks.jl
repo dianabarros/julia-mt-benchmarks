@@ -77,6 +77,11 @@ end
 
 iterations = 1
 
+# compile run
+debug_crack_password(debug_brute_force,"800618943025315f869e4e1f09471012")
+debug_crack_password(debug_brute_force_threads,"800618943025315f869e4e1f09471012")
+debug_crack_password(debug_brute_force_floop,"800618943025315f869e4e1f09471012", ex=ThreadedEx(basesize=2))
+
 df = DataFrame(iteration = Int64[], func=String[], input=String[], executor=Vector{Union{String,Missing}}(), 
                 basesize=Vector{Union{Int64,Missing}}(), n_threads=Int64[], total_bytes=Int64[], 
                 main_loop_bytes=Int64[], main_loop_time=Float64[], total_time=Float64[], loop_1_time=Float64[], 

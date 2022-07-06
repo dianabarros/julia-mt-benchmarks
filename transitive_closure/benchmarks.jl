@@ -70,6 +70,12 @@ for (size, file_path) in inputs
     end
 end
 
+#compile run
+nNodes, bytes_per_row, graph = read_file("transitive_closure2.in")
+debug(warshall!, nNodes, bytes_per_row, graph)
+debug(warshall_threads!, nNodes, bytes_per_row, graph)
+debug(warshall_floops!, nNodes, bytes_per_row, graph, ex=ThreadedEx(basesize=2))
+
 df = DataFrame(func=String[], input=String[], executor=Vector{Union{String,Missing}}(), n_threads=Int64[], 
 basesize=Vector{Union{Int64,Missing}}(),total_bytes=Int64[], total_time=Float64[])
 df_file_name = string("transitive_closure_results_",nthreads(),".csv")
