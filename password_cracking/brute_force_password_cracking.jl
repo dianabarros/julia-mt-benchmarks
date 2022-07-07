@@ -2,6 +2,7 @@ using MD5
 using FoldsThreads
 using FLoops
 using Base.Threads
+using BenchmarkTools
 
 mutable struct BenchmarkSample
     loop_tasks::Vector{Vector{Vector{Int64}}}
@@ -12,9 +13,7 @@ BenchmarkSample(loop_tasks, suite) = BenchmarkSample(loop_tasks, suite, nothing)
 
 letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890"
 
-thread_tasks = [String[] for _ in 1:nthreads()]
-
-function brute_force(hash1, str, i, n)
+function brute_force_recursive(hash1, str, i, n)
     global letters
     if i == n + 1
         hash2 = md5(String(str))
@@ -197,6 +196,404 @@ function brute_force(hash1::Vector{UInt8})
                                         hash2 = md5(String(local_str))
                                         if hash1 == hash2
                                             found = String(local_str)
+                                            break
+                                        end
+                                    end
+                                end end
+                            end end
+                        end end
+                    end end
+                end end
+            end end
+        end end
+    end
+    return found
+end
+
+function brute_force_floop(hash1::Vector{UInt8}, ex::FoldsThreads.FoldsBase.Executor)
+    lk = ReentrantLock()
+    found = nothing
+    @floop ex for letter in letters if isnothing(found)
+        local_str = fill('\0',1)
+        local_str[1] = letter
+        hash2 = md5(String(local_str))
+        if hash1 == hash2
+            lock(lk) do
+                found = String(local_str)
+            end
+            break
+        end
+    end end
+
+    if isnothing(found)
+        @floop ex for letter in letters if isnothing(found)
+            local_str = fill('\0',2)
+            local_str[1] = letter
+            for letter in letters
+                local_str[2] = letter
+                hash2 = md5(String(local_str))
+                if hash1 == hash2
+                    lock(lk) do
+                        found = String(local_str)
+                    end
+                    break
+                end
+            end
+        end end   
+    end
+
+    if isnothing(found)
+        @floop ex for letter in letters if isnothing(found)
+            local_str = fill('\0',3)
+            local_str[1] = letter
+            for letter in letters if isnothing(found)
+                local_str[2] = letter
+                for letter in letters
+                    local_str[3] = letter
+                    hash2 = md5(String(local_str))
+                    if hash1 == hash2
+                        lock(lk) do
+                            found = String(local_str)
+                        end
+                        break
+                    end
+                end
+            end end
+        end end
+    end
+
+    if isnothing(found)
+        @floop ex for letter in letters if isnothing(found)
+            local_str = fill('\0',4)
+            local_str[1] = letter
+            for letter in letters if isnothing(found)
+                local_str[2] = letter
+                for letter in letters if isnothing(found)
+                    local_str[3] = letter
+                    for letter in letters
+                        local_str[4] = letter
+                        hash2 = md5(String(local_str))
+                        if hash1 == hash2
+                            lock(lk) do
+                                found = String(local_str)
+                            end
+                            break
+                        end
+                    end
+                end end
+            end end
+        end end
+    end
+
+    if isnothing(found)
+        @floop ex for letter in letters if isnothing(found)
+            local_str = fill('\0',5)
+            local_str[1] = letter
+            for letter in letters if isnothing(found)
+                local_str[2] = letter
+                for letter in letters if isnothing(found)
+                    local_str[3] = letter
+                    for letter in letters if isnothing(found)
+                        local_str[4] = letter
+                        for letter in letters
+                            local_str[5] = letter
+                            hash2 = md5(String(local_str))
+                            if hash1 == hash2
+                                lock(lk) do
+                                    found = String(local_str)
+                                end
+                                break
+                            end
+                        end
+                    end end
+                end end
+            end end
+        end end
+    end
+
+    if isnothing(found)
+        @floop ex for letter in letters if isnothing(found)
+            local_str = fill('\0',6)
+            local_str[1] = letter
+            for letter in letters if isnothing(found)
+                local_str[2] = letter
+                for letter in letters if isnothing(found)
+                    local_str[3] = letter
+                    for letter in letters if isnothing(found)
+                        local_str[4] = letter
+                        for letter in letters if isnothing(found)
+                            local_str[5] = letter
+                            for letter in letters
+                                local_str[6] = letter
+                                hash2 = md5(String(local_str))
+                                if hash1 == hash2
+                                    lock(lk) do
+                                        found = String(local_str)
+                                    end
+                                    break
+                                end
+                            end
+                        end end
+                    end end
+                end end
+            end end
+        end end
+    end
+
+    if isnothing(found)
+        @floop ex for letter in letters if isnothing(found)
+            local_str = fill('\0',7)
+            local_str[1] = letter
+            for letter in letters if isnothing(found)
+                local_str[2] = letter
+                for letter in letters if isnothing(found)
+                    local_str[3] = letter
+                    for letter in letters if isnothing(found)
+                        local_str[4] = letter
+                        for letter in letters if isnothing(found)
+                            local_str[5] = letter
+                            for letter in letters if isnothing(found)
+                                local_str[6] = letter
+                                for letter in letters
+                                    local_str[7] = letter
+                                    hash2 = md5(String(local_str))
+                                    if hash1 == hash2
+                                        lock(lk) do
+                                            found = String(local_str)
+                                        end
+                                        break
+                                    end
+                                end
+                            end end
+                        end end
+                    end end
+                end end
+            end end
+        end end
+    end
+
+    if isnothing(found)
+        @floop ex for letter in letters if isnothing(found)
+            local_str = fill('\0',8)
+            local_str[1] = letter
+            for letter in letters if isnothing(found)
+                local_str[2] = letter
+                for letter in letters if isnothing(found)
+                    local_str[3] = letter
+                    for letter in letters if isnothing(found)
+                        local_str[4] = letter
+                        for letter in letters if isnothing(found)
+                            local_str[5] = letter
+                            for letter in letters if isnothing(found)
+                                local_str[6] = letter
+                                for letter in letters if isnothing(found)
+                                    local_str[7] = letter
+                                    for letter in letters
+                                        local_str[8] = letter
+                                        hash2 = md5(String(local_str))
+                                        if hash1 == hash2
+                                            lock(lk) do
+                                                found = String(local_str)
+                                            end
+                                            break
+                                        end
+                                    end
+                                end end
+                            end end
+                        end end
+                    end end
+                end end
+            end end
+        end end
+    end
+    return found
+end
+
+function brute_force_threads(hash1::Vector{UInt8})
+    lk = ReentrantLock()
+    found = nothing
+    @threads for letter in letters if isnothing(found)
+        local_str = fill('\0',1)
+        local_str[1] = letter
+        hash2 = md5(String(local_str))
+        if hash1 == hash2
+            lock(lk) do
+                found = String(local_str)
+            end
+            break
+        end
+    end end
+
+    if isnothing(found)
+        @threads for letter in letters if isnothing(found)
+            local_str = fill('\0',2)
+            local_str[1] = letter
+            for letter in letters
+                local_str[2] = letter
+                hash2 = md5(String(local_str))
+                if hash1 == hash2
+                    lock(lk) do
+                        found = String(local_str)
+                    end
+                    break
+                end
+            end
+        end end   
+    end
+
+    if isnothing(found)
+        @threads for letter in letters if isnothing(found)
+            local_str = fill('\0',3)
+            local_str[1] = letter
+            for letter in letters if isnothing(found)
+                local_str[2] = letter
+                for letter in letters
+                    local_str[3] = letter
+                    hash2 = md5(String(local_str))
+                    if hash1 == hash2
+                        lock(lk) do
+                            found = String(local_str)
+                        end
+                        break
+                    end
+                end
+            end end
+        end end
+    end
+
+    if isnothing(found)
+        @threads for letter in letters if isnothing(found)
+            local_str = fill('\0',4)
+            local_str[1] = letter
+            for letter in letters if isnothing(found)
+                local_str[2] = letter
+                for letter in letters if isnothing(found)
+                    local_str[3] = letter
+                    for letter in letters
+                        local_str[4] = letter
+                        hash2 = md5(String(local_str))
+                        if hash1 == hash2
+                            lock(lk) do
+                                found = String(local_str)
+                            end
+                            break
+                        end
+                    end
+                end end
+            end end
+        end end
+    end
+
+    if isnothing(found)
+        @threads for letter in letters if isnothing(found)
+            local_str = fill('\0',5)
+            local_str[1] = letter
+            for letter in letters if isnothing(found)
+                local_str[2] = letter
+                for letter in letters if isnothing(found)
+                    local_str[3] = letter
+                    for letter in letters if isnothing(found)
+                        local_str[4] = letter
+                        for letter in letters
+                            local_str[5] = letter
+                            hash2 = md5(String(local_str))
+                            if hash1 == hash2
+                                lock(lk) do
+                                    found = String(local_str)
+                                end
+                                break
+                            end
+                        end
+                    end end
+                end end
+            end end
+        end end
+    end
+
+    if isnothing(found)
+        @threads for letter in letters if isnothing(found)
+            local_str = fill('\0',6)
+            local_str[1] = letter
+            for letter in letters if isnothing(found)
+                local_str[2] = letter
+                for letter in letters if isnothing(found)
+                    local_str[3] = letter
+                    for letter in letters if isnothing(found)
+                        local_str[4] = letter
+                        for letter in letters if isnothing(found)
+                            local_str[5] = letter
+                            for letter in letters
+                                local_str[6] = letter
+                                hash2 = md5(String(local_str))
+                                if hash1 == hash2
+                                    lock(lk) do
+                                        found = String(local_str)
+                                    end
+                                    break
+                                end
+                            end
+                        end end
+                    end end
+                end end
+            end end
+        end end
+    end
+
+    if isnothing(found)
+        @threads for letter in letters if isnothing(found)
+            local_str = fill('\0',7)
+            local_str[1] = letter
+            for letter in letters if isnothing(found)
+                local_str[2] = letter
+                for letter in letters if isnothing(found)
+                    local_str[3] = letter
+                    for letter in letters if isnothing(found)
+                        local_str[4] = letter
+                        for letter in letters if isnothing(found)
+                            local_str[5] = letter
+                            for letter in letters if isnothing(found)
+                                local_str[6] = letter
+                                for letter in letters
+                                    local_str[7] = letter
+                                    hash2 = md5(String(local_str))
+                                    if hash1 == hash2
+                                        lock(lk) do
+                                            found = String(local_str)
+                                        end
+                                        break
+                                    end
+                                end
+                            end end
+                        end end
+                    end end
+                end end
+            end end
+        end end
+    end
+
+    if isnothing(found)
+        @threads for letter in letters if isnothing(found)
+            local_str = fill('\0',8)
+            local_str[1] = letter
+            for letter in letters if isnothing(found)
+                local_str[2] = letter
+                for letter in letters if isnothing(found)
+                    local_str[3] = letter
+                    for letter in letters if isnothing(found)
+                        local_str[4] = letter
+                        for letter in letters if isnothing(found)
+                            local_str[5] = letter
+                            for letter in letters if isnothing(found)
+                                local_str[6] = letter
+                                for letter in letters if isnothing(found)
+                                    local_str[7] = letter
+                                    for letter in letters
+                                        local_str[8] = letter
+                                        hash2 = md5(String(local_str))
+                                        if hash1 == hash2
+                                            lock(lk) do
+                                                found = String(local_str)
+                                            end
                                             break
                                         end
                                     end
@@ -411,205 +808,6 @@ function debug_brute_force(
                 end end
             end
         end
-    end
-    return found
-end
-
-function brute_force_parallel(hash1::Vector{UInt8}, ex::FoldsThreads.FoldsBase.Executor)
-    lk = ReentrantLock()
-    found = nothing
-    @floop ex for letter in letters if isnothing(found)
-        local_str = fill('\0',1)
-        local_str[1] = letter
-        hash2 = md5(String(local_str))
-        if hash1 == hash2
-            lock(lk) do
-                found = String(local_str)
-            end
-            break
-        end
-    end end
-
-    if isnothing(found)
-        @floop ex for letter in letters if isnothing(found)
-            local_str = fill('\0',2)
-            local_str[1] = letter
-            for letter in letters
-                local_str[2] = letter
-                hash2 = md5(String(local_str))
-                if hash1 == hash2
-                    lock(lk) do
-                        found = String(local_str)
-                    end
-                    break
-                end
-            end
-        end end   
-    end
-
-    if isnothing(found)
-        @floop ex for letter in letters if isnothing(found)
-            local_str = fill('\0',3)
-            local_str[1] = letter
-            for letter in letters if isnothing(found)
-                local_str[2] = letter
-                for letter in letters
-                    local_str[3] = letter
-                    hash2 = md5(String(local_str))
-                    if hash1 == hash2
-                        lock(lk) do
-                            found = String(local_str)
-                        end
-                        break
-                    end
-                end
-            end end
-        end end
-    end
-
-    if isnothing(found)
-        @floop ex for letter in letters if isnothing(found)
-            local_str = fill('\0',4)
-            local_str[1] = letter
-            for letter in letters if isnothing(found)
-                local_str[2] = letter
-                for letter in letters if isnothing(found)
-                    local_str[3] = letter
-                    for letter in letters
-                        local_str[4] = letter
-                        hash2 = md5(String(local_str))
-                        if hash1 == hash2
-                            lock(lk) do
-                                found = String(local_str)
-                            end
-                            break
-                        end
-                    end
-                end end
-            end end
-        end end
-    end
-
-    if isnothing(found)
-        @floop ex for letter in letters if isnothing(found)
-            local_str = fill('\0',5)
-            local_str[1] = letter
-            for letter in letters if isnothing(found)
-                local_str[2] = letter
-                for letter in letters if isnothing(found)
-                    local_str[3] = letter
-                    for letter in letters if isnothing(found)
-                        local_str[4] = letter
-                        for letter in letters
-                            local_str[5] = letter
-                            hash2 = md5(String(local_str))
-                            if hash1 == hash2
-                                lock(lk) do
-                                    found = String(local_str)
-                                end
-                                break
-                            end
-                        end
-                    end end
-                end end
-            end end
-        end end
-    end
-
-    if isnothing(found)
-        @floop ex for letter in letters if isnothing(found)
-            local_str = fill('\0',6)
-            local_str[1] = letter
-            for letter in letters if isnothing(found)
-                local_str[2] = letter
-                for letter in letters if isnothing(found)
-                    local_str[3] = letter
-                    for letter in letters if isnothing(found)
-                        local_str[4] = letter
-                        for letter in letters if isnothing(found)
-                            local_str[5] = letter
-                            for letter in letters
-                                local_str[6] = letter
-                                hash2 = md5(String(local_str))
-                                if hash1 == hash2
-                                    lock(lk) do
-                                        found = String(local_str)
-                                    end
-                                    break
-                                end
-                            end
-                        end end
-                    end end
-                end end
-            end end
-        end end
-    end
-
-    if isnothing(found)
-        @floop ex for letter in letters if isnothing(found)
-            local_str = fill('\0',7)
-            local_str[1] = letter
-            for letter in letters if isnothing(found)
-                local_str[2] = letter
-                for letter in letters if isnothing(found)
-                    local_str[3] = letter
-                    for letter in letters if isnothing(found)
-                        local_str[4] = letter
-                        for letter in letters if isnothing(found)
-                            local_str[5] = letter
-                            for letter in letters if isnothing(found)
-                                local_str[6] = letter
-                                for letter in letters
-                                    local_str[7] = letter
-                                    hash2 = md5(String(local_str))
-                                    if hash1 == hash2
-                                        lock(lk) do
-                                            found = String(local_str)
-                                        end
-                                        break
-                                    end
-                                end
-                            end end
-                        end end
-                    end end
-                end end
-            end end
-        end end
-    end
-
-    if isnothing(found)
-        @floop ex for letter in letters if isnothing(found)
-            local_str = fill('\0',8)
-            local_str[1] = letter
-            for letter in letters if isnothing(found)
-                local_str[2] = letter
-                for letter in letters if isnothing(found)
-                    local_str[3] = letter
-                    for letter in letters if isnothing(found)
-                        local_str[4] = letter
-                        for letter in letters if isnothing(found)
-                            local_str[5] = letter
-                            for letter in letters if isnothing(found)
-                                local_str[6] = letter
-                                for letter in letters if isnothing(found)
-                                    local_str[7] = letter
-                                    for letter in letters
-                                        local_str[8] = letter
-                                        hash2 = md5(String(local_str))
-                                        if hash1 == hash2
-                                            lock(lk) do
-                                                found = String(local_str)
-                                            end
-                                            break
-                                        end
-                                    end
-                                end end
-                            end end
-                        end end
-                    end end
-                end end
-            end end
-        end end
     end
     return found
 end
@@ -1136,13 +1334,13 @@ function debug_brute_force_threads(
     return found
 end
 
-function crack_password(hash1_str::String)
+function crack_password_recursive(hash1_str::String)
     hash1 = hex2bytes(hash1_str)
     str = []
     found =  false
     for i in 2:8
         str = fill('\0',i)
-        if brute_force(hash1, str, 1, i)
+        if brute_force_recursive(hash1, str, 1, i)
             found = true
             break
         end
@@ -1152,9 +1350,14 @@ function crack_password(hash1_str::String)
     end
 end
 
-function crack_password_parallel(kwargs::NamedTuple{T}) where T
-    hash1 = hex2bytes(kwargs.hash1_str)
-    return brute_force_parallel(hash1, kwargs.ex)
+function benchmark_brute_force(f::T, hash1_str::String; ex=nothing) where T
+    hash1 = hex2bytes(hash1_str)
+    if isnothing(ex)
+        suite = @benchmark $f($hash1)
+    else
+        suite = @benchmark $f($hash1, $ex)
+    end
+    return suite
 end
 
 function debug_crack_password(

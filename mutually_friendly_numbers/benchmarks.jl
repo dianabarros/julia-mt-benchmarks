@@ -27,6 +27,9 @@ using DataFrames, CSV
 
 include("friendly_numbers.jl")
 
+BenchmarkTools.DEFAULT_PARAMETERS.samples = 10
+BenchmarkTools.DEFAULT_PARAMETERS.evals = 1
+
 # TODO: Pick better inputs
 inputs = Dict(
     "small" => (0, 50000),
@@ -45,6 +48,7 @@ funcs =[debug_friendly_numbers, debug_friendly_numbers_threads, debug_friendly_n
 if !isnothing(args["funcs"])
     funcs = eval(Meta.parse(args["funcs"]))
 end
+benchmark_funcs = [benchmark_friendly_numbers, benchmark_friendly_numbers_floop, benchmark_friendly_numbers_threads]
 
 executors = [ThreadedEx, WorkStealingEx, DepthFirstEx, TaskPoolEx, NondeterministicEx]
 if !isnothing(args["executors"])
@@ -54,7 +58,9 @@ end
 iterations = args["its"]
 check_sequential = args["check_sequential"]
 
+println("Preparing runs")
 runs = []
+bench_runs = []
 for (size, range) in inputs
     for func in funcs
         if func == debug_friendly_numbers_floop
@@ -67,12 +73,27 @@ for (size, range) in inputs
             push!(runs, run)
         end
     end
+    for func in benchmark_funcs
+        if func == debug_friendly_numbers_floop
+            for exec in executors
+                run = (f=func, size=size, start=range[1], stop=range[2], ex=exec, check_sequential=check_sequential)
+                push!(bench_runs, run)
+            end
+        else
+            run = (f=func, size=size, start=range[1], stop=range[2], ex=nothing, check_sequential=check_sequential)
+            push!(bench_runs, run)
+        end
+    end
 end
 
 # compile run
+println("Running compile runs")
 debug(debug_friendly_numbers, 0, 10)
 debug(debug_friendly_numbers_threads, 0, 10)
 debug(debug_friendly_numbers_floop, 0, 10, ex=ThreadedEx(basesize=2))
+benchmark_friendly_numbers(0, 10)
+benchmark_friendly_numbers_threads(0, 10)
+benchmark_friendly_numbers_floop(0, 10, ThreadedEx(basesize=2))
 
 df = DataFrame(iteration = Int64[], func=String[], input=String[], executor=Vector{Union{String, Missing}}(), 
     basesize = Vector{Union{Int64,Missing}}(), n_threads=Int64[], total_bytes=Int64[], total_time=Float64[],
@@ -83,6 +104,7 @@ df_file_name = string("mutually_friends_results_",nthreads(),".csv")
 task_distribution = []
 task_times = []
 
+println("Running...")
 for run in runs
     it_dist = Dict()
     it_ttime = Dict()
@@ -106,6 +128,26 @@ for run in runs
     if length(it_ttime) != 0
         push!(task_times, (run=run, dist=it_ttime))
     end
+end
+
+bench_df = DataFrame(func=String[], input=String[], executor=Vector{Union{String, Missing}}(), 
+        basesize = Vector{Union{Int64,Missing}}(), n_threads=Int64[], memory=Int64[]
+        )
+bench_df_file_name = string("mutually_friends_memory_",nthreads(),".csv")
+
+for run in bench_runs
+    println("BenchmarkTools run = ", run) 
+    if isnothing(run.ex)
+        suite = run.f(run.start, run.stop)
+    else
+        basesize=div(run.stop-run.start, nthreads())
+        suite = run.f(run.start, run.stop, run.ex(basesize=basesize))
+    end
+    push!(dbench_df, (func=String(Symbol(run.f)), input=run.size, 
+            executor=isnothing(run.ex) ? missing : String(Symbol(run.ex)), 
+            basesize = isnothing(run.ex) ? missing : basesize, n_threads=nthreads(),
+            memory=suite.memory))
+    CSV.write(bench_df_file_name, bench_df)
 end
 
 open(string("mutually_friends_task_distribution_",nthreads(),".txt"), "w") do io

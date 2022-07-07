@@ -27,6 +27,9 @@ using DataFrames, CSV
 
 include("transitive_closure.jl")
 
+BenchmarkTools.DEFAULT_PARAMETERS.samples = 4
+BenchmarkTools.DEFAULT_PARAMETERS.evals = 1
+
 inputs = Dict(
     "small" => "transitive_closure/1280_nodes.in",
     "medium" => "transitive_closure/2560_nodes.in",
@@ -40,10 +43,11 @@ if !isnothing(args["inputs"])
     inputs = arg_inputs
 end
 
-funcs = [warshall!, warshall_threads!, warshall_floops!]
+funcs = [debug_warshall!, debug_warshall_threads!, debug_warshall_floops!]
 if !isnothing(args["funcs"])
     funcs = eval(Meta.parse(args["funcs"]))
 end
+benchmark_funcs = [warshall!, warshall_threads!, warshall_floops!]
 
 executors = [ThreadedEx, WorkStealingEx, DepthFirstEx, TaskPoolEx, NondeterministicEx]
 if !isnothing(args["executors"])
@@ -53,12 +57,14 @@ end
 iterations = args["its"]
 check_sequential = args["check_sequential"]
 
+println("Preparing runs")
 runs = []
+bench_runs = []
 
 for (size, file_path) in inputs
     nNodes, bytes_per_row, graph = read_file(file_path)
     for func in funcs
-        if func == warshall_floops!
+        if func == debug_warshall_floops!
             for exec in executors
                 run = (f=func, size=size, nNodes=nNodes, bytes_per_row=bytes_per_row, graph=graph, ex=exec, basesize=div(nNodes, nthreads()), check_sequential=check_sequential)
                 push!(runs, run)
@@ -68,18 +74,34 @@ for (size, file_path) in inputs
             push!(runs, run)
         end
     end
+    for func in benchmark_funcs
+        if func == warshall_floops!
+            for exec in executors
+                run = (f=func, size=size, nNodes=nNodes, bytes_per_row=bytes_per_row, graph=graph, ex=exec, basesize=div(nNodes, nthreads()), check_sequential=check_sequential)
+                push!(bench_runs, run)
+            end
+        else
+            run = (f=func, size=size, ex=nothing, basesize=nothing, nNodes=nNodes, bytes_per_row=bytes_per_row, graph=graph, check_sequential=check_sequential)
+            push!(bench_runs, run)
+        end
+    end
 end
 
 #compile run
+println("Running compile runs")
 nNodes, bytes_per_row, graph = read_file("transitive_closure2.in")
-debug(warshall!, nNodes, bytes_per_row, graph)
-debug(warshall_threads!, nNodes, bytes_per_row, graph)
-debug(warshall_floops!, nNodes, bytes_per_row, graph, ex=ThreadedEx(basesize=2))
+debug(debug_warshall!, nNodes, bytes_per_row, graph)
+debug(debug_warshall_threads!, nNodes, bytes_per_row, graph)
+debug(debug_warshall_floops!, nNodes, bytes_per_row, graph, ex=ThreadedEx(basesize=2))
+warshall!(nNodes, bytes_per_row, graph)
+warshall_threads!(nNodes, bytes_per_row, graph)
+warshall_floops!(nNodes, bytes_per_row, graph, ThreadedEx(basesize=2))
 
 df = DataFrame(func=String[], input=String[], executor=Vector{Union{String,Missing}}(), n_threads=Int64[], 
 basesize=Vector{Union{Int64,Missing}}(),total_bytes=Int64[], total_time=Float64[])
 df_file_name = string("transitive_closure_results_",nthreads(),".csv")
 
+println("Running...")
 task_distribution = []
 task_times = []
 for run in runs
@@ -110,6 +132,22 @@ for run in runs
     if length(it_ttime) != 0
         push!(task_times, (run=run, dist=it_ttime))
     end
+end
+
+bench_df = DataFrame(func=String[], input=String[], executor=Vector{Union{String,Missing}}(), n_threads=Int64[], memory=Int64[])
+bench_df_file_name = string("transitive_closure_memory_",nthreads(),".csv")
+
+for run in bench_runs
+    println("BenchmarkTools run = ", run) 
+    if isnothing(run.ex)
+        suite = benchmark(run.f, run.nNodes, run.bytes_per_row, run.graph)
+    else
+        suite = benchmark(run.f, run.nNodes, run.bytes_per_row, run.graph, run.ex)
+    end
+    push!(bench_df, (func=String(Symbol(run.f)), input=run.size, executor=isnothing(run.ex) ? missing : String(Symbol(run.ex)),
+            basesize=isnothing(run.basesize) ? missing : run.basesize, n_threads=nthreads(),
+            memory=suite.memory))
+    CSV.write(bench_df_file_name, bench_df)
 end
 
 open(string("transitive_closure_task_distribution_",nthreads(), ".txt"), "w") do io

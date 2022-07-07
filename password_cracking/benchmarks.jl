@@ -25,6 +25,10 @@ using DataFrames, CSV
 
 include("brute_force_password_cracking.jl")
 
+BenchmarkTools.DEFAULT_PARAMETERS.samples = 10
+BenchmarkTools.DEFAULT_PARAMETERS.seconds = 1800
+BenchmarkTools.DEFAULT_PARAMETERS.evals = 1
+
 inputs = Dict(
     4 => Dict(
         "FAZE" => "be5d75fa67ef370e98b3d3611c318156",
@@ -78,6 +82,7 @@ funcs = [debug_brute_force, debug_brute_force_threads, debug_brute_force_floop]
 if !isnothing(args["funcs"])
     funcs = eval(Meta.parse(args["funcs"]))
 end
+benchmark_funcs = [brute_force, brute_force_floop, brute_force_threads]
 
 basesizes = [div(length(letters), nthreads())]
 
@@ -89,7 +94,9 @@ end
 iterations = args["its"]
 check_sequential = args["check_sequential"]
 
+println("Preparing runs")
 runs = []
+bench_runs = []
 
 for pw_size in keys(inputs)
     for pw in collect(keys(inputs[pw_size]))[1:input_samples]
@@ -107,13 +114,30 @@ for pw_size in keys(inputs)
                 push!(runs, run)
             end
         end
+        for func in benchmark_funcs
+            if func == debug_brute_force_floop
+                for exec in executors
+                    for basesize in basesizes
+                        run = (f=func, pw=pw, hash_str=hash_str, ex=exec, basesize=basesize, check_sequential=check_sequential)
+                        push!(bench_runs, run)
+                    end
+                end
+            else
+                run = (f=func, pw=pw, hash_str=hash_str, ex=nothing, basesize=nothing, check_sequential=check_sequential)
+                push!(bench_runs, run)
+            end
+        end
     end
 end
 
 # compile run
+println("Running compile runs")
 debug_crack_password(debug_brute_force,"800618943025315f869e4e1f09471012")
 debug_crack_password(debug_brute_force_threads,"800618943025315f869e4e1f09471012")
 debug_crack_password(debug_brute_force_floop,"800618943025315f869e4e1f09471012", ex=ThreadedEx(basesize=2))
+brute_force("800618943025315f869e4e1f09471012")
+brute_force_threads("800618943025315f869e4e1f09471012")
+brute_force_floop("800618943025315f869e4e1f09471012", ThreadedEx(basesize=2))
 
 df = DataFrame(iteration = Int64[], func=String[], input=String[], executor=Vector{Union{String,Missing}}(), 
                 basesize=Vector{Union{Int64,Missing}}(), n_threads=Int64[], total_bytes=Int64[], 
@@ -125,6 +149,7 @@ df_file_name = string("pw_cracking_results_",nthreads(),".csv")
 task_distribution = []
 task_times = []
 
+println("Running...")
 for run in runs
     it_dist = Dict()
     it_ttime = Dict()
@@ -160,6 +185,22 @@ for run in runs
     if length(it_ttime) != 0
         push!(task_times, (run=run, dist=it_ttime))
     end
+end
+
+bench_df = DataFrame(iteration = Int64[], func=String[], input=String[], executor=Vector{Union{String,Missing}}(), 
+                basesize=Vector{Union{Int64,Missing}}(), n_threads=Int64[], memory=Int64[])
+bench_df_file_name = string("pw_cracking_memory_",nthreads(),".csv")
+
+for run in bench_runs
+    println("BenchmarkTools run = ", run) 
+    if isnothing(run.ex)
+        suite = benchmark_brute_force(run.f, run.hash_str)
+    else
+        suite = benchmark_brute_force(run.f, run.hash_str, ex=run.ex)
+    end
+    push!(bench_df, (iteration=it, func=String(Symbol(run.f)), input=run.pw, executor=isnothing(run.ex) ? missing : String(Symbol(run.ex)), basesize=isnothing(run.basesize) ? missing : run.basesize, 
+            n_threads=nthreads(), memory=suite.memory))
+    CSV.write(bench_df_file_name, bench_df)
 end
 
 open(string("pw_craking_task_distribution_",nthreads(),".txt"), "w") do io

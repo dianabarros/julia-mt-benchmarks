@@ -1,6 +1,7 @@
 using FoldsThreads
 using FLoops
 using Base.Threads
+using BenchmarkTools
 
 mutable struct BenchmarkSample
     task_distribution::Dict{Int64,Vector{Vector{Int64}}}
@@ -62,7 +63,53 @@ function write_graph(nNodes, bytes_per_row, graph)
     end
 end
 
-function warshall!(nNodes::Int64, bytes_per_row::Int64, graph::Matrix{UInt8};
+function warshall!(nNodes::Int64, bytes_per_row::Int64, graph::Matrix{UInt8}
+    ) where T
+    for c in 0:nNodes-1
+        c_int_div = div(c,8)
+        column_bit = c_remainder_lookup[c%8]
+        for r in 0:nNodes-1
+            if (r != c && (graph[r+1, c_int_div+1]&column_bit != 0))
+                for j in 0:bytes_per_row-1
+                    graph[r+1,j+1] = graph[r+1,j+1] | graph[c+1, j+1]
+                end
+            end
+        end
+    end
+end
+
+function warshall_floops!(nNodes::Int64, bytes_per_row::Int64, graph::Matrix{UInt8},
+        ex::FoldsThreads.FoldsBase.Executor
+    ) where T
+    for c in 0:nNodes-1
+        c_int_div = div(c,8)
+        column_bit = c_remainder_lookup[c%8]
+        @floop ex for r in 0:nNodes-1
+            if (r != c && (graph[r+1, c_int_div+1]&column_bit != 0))
+                for j in 0:bytes_per_row-1
+                    graph[r+1,j+1] = graph[r+1,j+1] | graph[c+1, j+1]
+                end
+            end
+        end
+    end
+end
+
+function warshall_threads!(nNodes::Int64, bytes_per_row::Int64, graph::Matrix{UInt8}
+    ) where T
+    for c in 0:nNodes-1
+        c_int_div = div(c,8)
+        column_bit = c_remainder_lookup[c%8]
+        @threads for r in 0:nNodes-1
+            if (r != c && (graph[r+1, c_int_div+1]&column_bit != 0))
+                for j in 0:bytes_per_row-1
+                    graph[r+1,j+1] = graph[r+1,j+1] | graph[c+1, j+1]
+                end
+            end
+        end
+    end
+end
+
+function debug_warshall!(nNodes::Int64, bytes_per_row::Int64, graph::Matrix{UInt8};
     ex::Union{FoldsThreads.FoldsBase.Executor,Nothing}=nothing, 
     task_distribution::Dict{Int64,Vector{Vector{Int64}}},
     suite::Dict{T}
@@ -82,7 +129,7 @@ function warshall!(nNodes::Int64, bytes_per_row::Int64, graph::Matrix{UInt8};
     end
 end
 
-function warshall_floops!(nNodes::Int64, bytes_per_row::Int64, graph::Matrix{UInt8};
+function debug_warshall_floops!(nNodes::Int64, bytes_per_row::Int64, graph::Matrix{UInt8};
         ex::Union{FoldsThreads.FoldsBase.Executor,Nothing}=nothing, 
         task_distribution::Dict{Int64,Vector{Vector{Int64}}}=nothing,
         suite::Union{Dict{T},Nothing}=nothing
@@ -108,7 +155,7 @@ function warshall_floops!(nNodes::Int64, bytes_per_row::Int64, graph::Matrix{UIn
     end
 end
 
-function warshall_threads!(nNodes::Int64, bytes_per_row::Int64, graph::Matrix{UInt8};
+function debug_warshall_threads!(nNodes::Int64, bytes_per_row::Int64, graph::Matrix{UInt8};
         ex::Union{FoldsThreads.FoldsBase.Executor,Nothing}=nothing, 
         task_distribution::Dict{Int64,Vector{Vector{Int64}}}=nothing,
         suite::Union{Dict{T},Nothing}=nothing
@@ -132,6 +179,15 @@ function warshall_threads!(nNodes::Int64, bytes_per_row::Int64, graph::Matrix{UI
             end
         end
     end
+end
+
+function benchmark(f::T, nNodes::Int64, bytes_per_row::Int64, graph, ex=nothing) where T
+    if isnothing(ex)
+        suite = @benchmark $f($nNodes, $bytes_per_row, $graph)
+    else
+        suite = @benchmark $f($nNodes, $bytes_per_row, $graph, $ex)
+    end
+    return suite
 end
 
 function debug(f::T, nNodes::Int64, bytes_per_row::Int64, graph; 
