@@ -1,6 +1,8 @@
 import Pkg
 Pkg.activate("password_cracking")
 
+using ArgParse 
+
 function parse_commandline()
     s = ArgParseSettings()
 
@@ -115,7 +117,7 @@ for pw_size in keys(inputs)
             end
         end
         for func in benchmark_funcs
-            if func == debug_brute_force_floop
+            if func == brute_force_floop
                 for exec in executors
                     for basesize in basesizes
                         run = (f=func, pw=pw, hash_str=hash_str, ex=exec, basesize=basesize, check_sequential=check_sequential)
@@ -135,9 +137,9 @@ println("Running compile runs")
 debug_crack_password(debug_brute_force,"800618943025315f869e4e1f09471012")
 debug_crack_password(debug_brute_force_threads,"800618943025315f869e4e1f09471012")
 debug_crack_password(debug_brute_force_floop,"800618943025315f869e4e1f09471012", ex=ThreadedEx(basesize=2))
-brute_force("800618943025315f869e4e1f09471012")
-brute_force_threads("800618943025315f869e4e1f09471012")
-brute_force_floop("800618943025315f869e4e1f09471012", ThreadedEx(basesize=2))
+brute_force(hex2bytes("800618943025315f869e4e1f09471012"))
+brute_force_threads(hex2bytes("800618943025315f869e4e1f09471012"))
+brute_force_floop(hex2bytes("800618943025315f869e4e1f09471012"), ThreadedEx(basesize=2))
 
 df = DataFrame(iteration = Int64[], func=String[], input=String[], executor=Vector{Union{String,Missing}}(), 
                 basesize=Vector{Union{Int64,Missing}}(), n_threads=Int64[], total_bytes=Int64[], 

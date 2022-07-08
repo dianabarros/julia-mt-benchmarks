@@ -74,7 +74,7 @@ for (size, range) in inputs
         end
     end
     for func in benchmark_funcs
-        if func == debug_friendly_numbers_floop
+        if func == benchmark_friendly_numbers_floop
             for exec in executors
                 run = (f=func, size=size, start=range[1], stop=range[2], ex=exec, check_sequential=check_sequential)
                 push!(bench_runs, run)
@@ -143,7 +143,7 @@ for run in bench_runs
         basesize=div(run.stop-run.start, nthreads())
         suite = run.f(run.start, run.stop, run.ex(basesize=basesize))
     end
-    push!(dbench_df, (func=String(Symbol(run.f)), input=run.size, 
+    push!(bench_df, (func=String(Symbol(run.f)), input=run.size, 
             executor=isnothing(run.ex) ? missing : String(Symbol(run.ex)), 
             basesize = isnothing(run.ex) ? missing : basesize, n_threads=nthreads(),
             memory=suite.memory))
