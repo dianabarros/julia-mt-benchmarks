@@ -116,6 +116,12 @@ for pw_size in keys(inputs)
                 push!(runs, run)
             end
         end
+    end
+end
+
+for pw_size in keys(inputs)
+    for pw in collect(keys(inputs[pw_size]))[1:1]
+        hash_str = inputs[pw_size][pw]
         for func in benchmark_funcs
             if func == brute_force_floop
                 for exec in executors
