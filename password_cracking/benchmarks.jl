@@ -195,7 +195,7 @@ for run in runs
     end
 end
 
-bench_df = DataFrame(iteration = Int64[], func=String[], input=String[], executor=Vector{Union{String,Missing}}(), 
+bench_df = DataFrame(func=String[], input=String[], executor=Vector{Union{String,Missing}}(), 
                 basesize=Vector{Union{Int64,Missing}}(), n_threads=Int64[], memory=Int64[])
 bench_df_file_name = string("pw_cracking_memory_",nthreads(),".csv")
 
@@ -204,9 +204,9 @@ for run in bench_runs
     if isnothing(run.ex)
         suite = benchmark_brute_force(run.f, run.hash_str)
     else
-        suite = benchmark_brute_force(run.f, run.hash_str, ex=run.ex)
+        suite = benchmark_brute_force(run.f, run.hash_str, ex=run.ex(basesize=run.basesize))
     end
-    push!(bench_df, (iteration=it, func=String(Symbol(run.f)), input=run.pw, executor=isnothing(run.ex) ? missing : String(Symbol(run.ex)), basesize=isnothing(run.basesize) ? missing : run.basesize, 
+    push!(bench_df, (func=String(Symbol(run.f)), input=run.pw, executor=isnothing(run.ex) ? missing : String(Symbol(run.ex)), basesize=isnothing(run.basesize) ? missing : run.basesize, 
             n_threads=nthreads(), memory=suite.memory))
     CSV.write(bench_df_file_name, bench_df)
 end
