@@ -89,7 +89,7 @@ end
 
 #compile run
 println("Running compile runs")
-nNodes, bytes_per_row, graph = read_file("transitive_closure2.in")
+nNodes, bytes_per_row, graph = read_file("transitive_closure/transitive_closure2.in")
 debug(debug_warshall!, nNodes, bytes_per_row, graph)
 debug(debug_warshall_threads!, nNodes, bytes_per_row, graph)
 debug(debug_warshall_floops!, nNodes, bytes_per_row, graph, ex=ThreadedEx(basesize=2))
@@ -134,15 +134,17 @@ for run in runs
     end
 end
 
-bench_df = DataFrame(func=String[], input=String[], executor=Vector{Union{String,Missing}}(), n_threads=Int64[], memory=Int64[])
+bench_df = DataFrame(func=String[], input=String[], executor=Vector{Union{String,Missing}}(), basesize=Int64[], n_threads=Int64[], memory=Int64[])
 bench_df_file_name = string("transitive_closure_memory_",nthreads(),".csv")
 
 for run in bench_runs
-    println("BenchmarkTools run = ", run) 
+    println("BenchmarkTools run = ", 
+        (f=run.f, nNodes=run.nNodes, bytes_per_row=run.bytes_per_row, ex=run.ex, basesize=run.basesize, check_sequential=run.check_sequential) 
+    ) 
     if isnothing(run.ex)
         suite = benchmark(run.f, run.nNodes, run.bytes_per_row, run.graph)
     else
-        suite = benchmark(run.f, run.nNodes, run.bytes_per_row, run.graph, run.ex)
+        suite = benchmark(run.f, run.nNodes, run.bytes_per_row, run.graph, run.ex(basesize=run.basesize))
     end
     push!(bench_df, (func=String(Symbol(run.f)), input=run.size, executor=isnothing(run.ex) ? missing : String(Symbol(run.ex)),
             basesize=isnothing(run.basesize) ? missing : run.basesize, n_threads=nthreads(),
