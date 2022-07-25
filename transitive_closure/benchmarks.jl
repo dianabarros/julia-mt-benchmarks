@@ -134,7 +134,7 @@ for run in runs
     end
 end
 
-bench_df = DataFrame(func=String[], input=String[], executor=Vector{Union{String,Missing}}(), basesize=Int64[], n_threads=Int64[], memory=Int64[])
+bench_df = DataFrame(func=String[], input=String[], executor=Vector{Union{String,Missing}}(), basesize=Vector{Union{Int64,Missing}}(), n_threads=Int64[], memory=Int64[])
 bench_df_file_name = string("transitive_closure_memory_",nthreads(),".csv")
 
 for run in bench_runs
