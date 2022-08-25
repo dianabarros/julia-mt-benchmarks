@@ -70,8 +70,6 @@ function friendly_numbers_floop(start::Int64, stop::Int64, ex::FoldsThreads.Fold
     result_a = zeros(Int64, last)
     result_b = zeros(Int64, last)
     @floop ex for i in start:stop
-        global thread_tasks
-        push!(thread_tasks[threadid()], i)
         ii = i - start
         sum = 1 + i
         the_num[ii+1] = i
@@ -107,7 +105,7 @@ function friendly_numbers_floop(start::Int64, stop::Int64, ex::FoldsThreads.Fold
     return result_a, result_b
 end
 
-function friendly_numbers_threads(start::Int64, stop::Int64, ex::FoldsThreads.FoldsBase.Executor)
+function friendly_numbers_threads(start::Int64, stop::Int64)
     last = stop - start + 1
     the_num = zeros(Int64, last)
     num = zeros(Int64, last)
@@ -115,8 +113,6 @@ function friendly_numbers_threads(start::Int64, stop::Int64, ex::FoldsThreads.Fo
     result_a = zeros(Int64, last)
     result_b = zeros(Int64, last)
     @threads for i in start:stop
-        global thread_tasks
-        push!(thread_tasks[threadid()], i)
         ii = i - start
         sum = 1 + i
         the_num[ii+1] = i
