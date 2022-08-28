@@ -1,7 +1,7 @@
 # For benchmarking the entire application instead of code blocks
 
 import Pkg
-Pkg.activate("mutually_friendly_numbers")
+Pkg.activate("transitive_closure")
 
 using ArgParse 
 
@@ -24,15 +24,15 @@ args = parse_commandline()
 
 using DataFrames, CSV
 
-include("friendly_numbers.jl")
+include("transitive_closure.jl")
 
-BenchmarkTools.DEFAULT_PARAMETERS.samples = 10
+BenchmarkTools.DEFAULT_PARAMETERS.samples = 4
 BenchmarkTools.DEFAULT_PARAMETERS.evals = 1
 
 inputs = Dict(
-    "small" => (0, 50000),
-    "medium" => (0, 200000),
-    "large" => (0, 350000)
+    "small" => "transitive_closure/1280_nodes.in",
+    "medium" => "transitive_closure/2560_nodes.in",
+    "large" => "transitive_closure/transitive_closure.in"
 )
 if !isnothing(args["inputs"])
     arg_inputs = Dict()
@@ -42,7 +42,7 @@ if !isnothing(args["inputs"])
     inputs = arg_inputs
 end
 
-funcs =[friendly_numbers, friendly_numbers_threads, friendly_numbers_floop]
+funcs =[warshall!, warshall_floops!, warshall_threads!]
 if !isnothing(args["funcs"])
     funcs = eval(Meta.parse(args["funcs"]))
 end
@@ -56,15 +56,16 @@ check_sequential = args["check_sequential"]
 
 println("Preparing runs")
 runs = []
-for (size, range) in inputs
+for (size, file_path) in inputs
+    nNodes, bytes_per_row, graph = read_file(file_path)
     for func in funcs
-        if func == friendly_numbers_floop
+        if func == warshall_floops!
             for exec in executors
-                run = (f=func, size=size, start=range[1], stop=range[2], ex=exec)
+                run = (f=func, size=size, nNodes=nNodes, bytes_per_row=bytes_per_row, graph=graph, ex=exec, basesize=div(nNodes, nthreads()), check_sequential=check_sequential)
                 push!(runs, run)
             end
         else
-            run = (f=func, size=size, start=range[1], stop=range[2], ex=nothing)
+            run = (f=func, size=size, ex=nothing, basesize=nothing, nNodes=nNodes, bytes_per_row=bytes_per_row, graph=graph, check_sequential=check_sequential)
             push!(runs, run)
         end
     end
@@ -72,27 +73,27 @@ end
 
 # compile run
 println("Running compile runs")
-friendly_numbers(0, 10)
-friendly_numbers_threads(0, 10)
-friendly_numbers_floop(0, 10, ThreadedEx(basesize=2))
+nNodes, bytes_per_row, graph = read_file("transitive_closure/transitive_closure2.in")
+warshall!(nNodes, bytes_per_row, graph)
+warshall_threads!(nNodes, bytes_per_row, graph)
+warshall_floops!(nNodes, bytes_per_row, graph, ThreadedEx(basesize=2))
 
 df = DataFrame(func=String[], input=String[], executor=Vector{Union{String, Missing}}(), 
     basesize = Vector{Union{Int64,Missing}}(), n_threads=Int64[], mem_usage=Int64[]
     )
-df_file_name = string("mutually_friends_full_mem",nthreads(),".csv")
+df_file_name = string("transitive_closure_full_mem_",nthreads(),".csv")
 
 println("Running...")
 for run in runs
-    println("run = ", run)
+    println("run = ", (f=run.f, nNodes=run.nNodes, bytes_per_row=run.bytes_per_row, ex=run.ex, basesize=run.basesize, check_sequential=run.check_sequential)) 
     if isnothing(run.ex)
-        suite = @benchmark $run.f($run.start, $run.stop)
+        suite = @benchmark $run.f($run.nNodes, $run.bytes_per_row, $run.graph)
     else
-        basesize=div(run.stop-run.start, nthreads())
-        suite = @benchmark $run.f($run.start, $run.stop, $run.ex(basesize=$basesize))
+        suite = @benchmark $run.f($run.nNodes, $run.bytes_per_row, $run.graph, $run.ex(basesize=$run.basesize))
     end
     push!(df, (func=String(Symbol(run.f)), input=run.size, 
             executor=isnothing(run.ex) ? missing : String(Symbol(run.ex)), 
-            basesize = isnothing(run.ex) ? missing : basesize, n_threads=nthreads(),
+            basesize = isnothing(run.ex) ? missing : run.basesize, n_threads=nthreads(),
             mem_usage=suite.memory))
     CSV.write(df_file_name, df)
 end
