@@ -4,7 +4,6 @@
 #include <sys/time.h>
 #include <omp.h>
 
-#define NUMBER_THREADS 12
 int gcd(int u, int v) {
     // Cálculo recursivo de MDC
 	if (v == 0)
@@ -15,9 +14,9 @@ int gcd(int u, int v) {
 
 void friendly_numbers(long int start, long int end) {
 
-    struct timeval start_time, end_time;
+    // struct timeval start_time, end_time;
 
-    gettimeofday(&start_time, NULL);
+    // gettimeofday(&start_time, NULL);
 
     // Ultimo indice se começarmos do 0 no intervalo
 	long int last = end - start + 1;
@@ -78,9 +77,9 @@ void friendly_numbers(long int start, long int end) {
 		}
 	}
 
-    gettimeofday(&end_time, NULL);
-    printf("Tempo de execucao: %ld microssegundos\n", ((end_time.tv_sec * 1000000 + end_time.tv_usec)
-                                                   - (start_time.tv_sec * 1000000 + start_time.tv_usec)));
+    // gettimeofday(&end_time, NULL);
+    // printf("Tempo de execucao: %ld microssegundos\n", ((end_time.tv_sec * 1000000 + end_time.tv_usec)
+    //                                                - (start_time.tv_sec * 1000000 + start_time.tv_usec)));
 
 	// for (i=0; i < n_result; i++){
 	// 	printf("%ld e %ld são amigos\n", result_a[i], result_b[i]);
@@ -95,9 +94,8 @@ void friendly_numbers(long int start, long int end) {
 int main(int argc, char **argv) {
 	long int start;
 	long int end;
-    struct timeval start_time, end_time;
+    // struct timeval start_time, end_time;
 
-    omp_set_num_threads(NUMBER_THREADS);
 
     // while (1) {
 	//     // Recebe os numeros de inicio e fim da busca
@@ -111,7 +109,9 @@ int main(int argc, char **argv) {
 
 	// }
 
-	friendly_numbers(0, 50000);
+	start = atoi(argv[1]);
+	end = atoi(argv[2]);
+	friendly_numbers(start, end);
 
 	return EXIT_SUCCESS;
 }
