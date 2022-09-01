@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
-#include <sys/time.h>
+// #include <time.h>
+// #include <sys/time.h>
 
 // void print_vec(long int *vec, int size){
 // 	for (int i = 0; i < size; i++){

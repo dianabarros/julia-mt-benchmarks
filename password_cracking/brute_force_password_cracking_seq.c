@@ -2,8 +2,7 @@
 #include <stdlib.h>
 #include <openssl/md5.h>
 #include <string.h>
-#include <sys/time.h>
-#include <omp.h>
+// #include <sys/time.h>
 
 #define MAX 10
 
