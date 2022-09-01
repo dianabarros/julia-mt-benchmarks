@@ -118,7 +118,7 @@ int main(int argc, char **argv) {
 	// omp_set_num_threads(12);
 	if (isOver == 0) {
 	//Senhas com 4 caracteres
-	# pragma omp parallel private(str, c, v, b, c1, v1, b1, c2, v2, b2, c3, v3, hash2) shared(letters, hash1_str, hash1, isOver)
+	// # pragma omp parallel private(str, c, v, b, c1, v1, b1, c2, v2, b2, c3, v3, hash2) shared(letters, hash1_str, hash1, isOver)
 	{
 		// printf("This is thread number: %d\n", omp_get_thread_num());
 		memset(str, 0, 5);
@@ -152,7 +152,7 @@ int main(int argc, char **argv) {
 		
 	if (isOver == 0) {
 	//Senhas com 5 caracteres
-	# pragma omp parallel private(str, c, v, b, c1, v1, b1, c2, v2, b2, c3, v3, hash2) shared(letters, hash1_str, hash1, isOver)
+	// # pragma omp parallel private(str, c, v, b, c1, v1, b1, c2, v2, b2, c3, v3, hash2) shared(letters, hash1_str, hash1, isOver)
 	{
 		//Senhas com 5 caracteres
 		memset(str, 0, 6);
@@ -191,7 +191,7 @@ int main(int argc, char **argv) {
 
 	if (isOver == 0) {
 	//Senhas com 6 caracteres
-	# pragma omp parallel private(str, c, v, b, c1, v1, b1, c2, v2, b2, c3, v3, hash2) shared(letters, hash1_str, hash1, isOver)
+	// # pragma omp parallel private(str, c, v, b, c1, v1, b1, c2, v2, b2, c3, v3, hash2) shared(letters, hash1_str, hash1, isOver)
 	{
 			//Senhas com 6 caracteres
 			memset(str, 0, 7);
@@ -235,7 +235,7 @@ int main(int argc, char **argv) {
 	
 	if (isOver == 0) {
 	//Senhas com 7 caracteres
-	# pragma omp parallel private(str, c, v, b, c1, v1, b1, c2, v2, b2, c3, v3, hash2) shared(letters, hash1_str, hash1, isOver)
+	// # pragma omp parallel private(str, c, v, b, c1, v1, b1, c2, v2, b2, c3, v3, hash2) shared(letters, hash1_str, hash1, isOver)
 	{
 			//Senhas com 7 caracteres
 			memset(str, 0, 8);
@@ -284,7 +284,7 @@ int main(int argc, char **argv) {
 	//Senhas com 8 caracteres
 	if (isOver == 0) {
 		
-	# pragma omp parallel private(str, c, v, b, c1, v1, b1, c2, v2, b2, c3, v3, hash2) shared(letters, hash1_str, hash1, isOver)
+	// # pragma omp parallel private(str, c, v, b, c1, v1, b1, c2, v2, b2, c3, v3, hash2) shared(letters, hash1_str, hash1, isOver)
 	{
 			//Senhas com 8 caracteres
 			memset(str, 0, 9);
