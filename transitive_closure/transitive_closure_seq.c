@@ -3,7 +3,6 @@
 #include <stdlib.h>
 // #include <time.h>
 #include <string.h>
-#include <omp.h>
 #include <stdint.h>
 
 #define BYTE_TO_BINARY_PATTERN "%c%c%c%c%c%c%c%c"
@@ -85,7 +84,7 @@ void warshall(){
   for (c = 0; c < nNodes; c++){
     c_int_div = c/8;
     column_bit = c_remainder_lookup[c%8];
-    #pragma omp parallel for private(r, j) shared(graph, c, c_int_div, column_bit, nNodes, bytes_per_row)
+    // #pragma omp parallel for private(r, j) shared(graph, c, c_int_div, column_bit, nNodes, bytes_per_row)
     for (r = 0; r < nNodes; r++){
       if (r != c && (graph[r * bytes_per_row + c_int_div]&column_bit)){
         for (j = 0; j < bytes_per_row; j++){
