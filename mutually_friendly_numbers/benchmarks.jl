@@ -16,6 +16,9 @@ function parse_commandline()
         "--its"
             arg_type = Int
             default = 10
+        "--benchmarktools"
+            action = :store_true
+            default = false
     end
 
     return parse_args(s)
@@ -91,9 +94,11 @@ println("Running compile runs")
 debug(debug_friendly_numbers, 0, 10)
 debug(debug_friendly_numbers_threads, 0, 10)
 debug(debug_friendly_numbers_floop, 0, 10, ex=ThreadedEx(basesize=2))
-benchmark_friendly_numbers(0, 10)
-benchmark_friendly_numbers_threads(0, 10)
-benchmark_friendly_numbers_floop(0, 10, ThreadedEx(basesize=2))
+if args["benchmarktools"]
+    benchmark_friendly_numbers(0, 10)
+    benchmark_friendly_numbers_threads(0, 10)
+    benchmark_friendly_numbers_floop(0, 10, ThreadedEx(basesize=2))
+end
 
 df = DataFrame(iteration = Int64[], func=String[], input=String[], executor=Vector{Union{String, Missing}}(), 
     basesize = Vector{Union{Int64,Missing}}(), n_threads=Int64[], total_bytes=Int64[], total_time=Float64[],
@@ -130,24 +135,26 @@ for run in runs
     end
 end
 
-bench_df = DataFrame(func=String[], input=String[], executor=Vector{Union{String, Missing}}(), 
-        basesize = Vector{Union{Int64,Missing}}(), n_threads=Int64[], memory=Int64[]
-        )
-bench_df_file_name = string("mutually_friends_memory_",nthreads(),".csv")
+if args["benchmarktools"]
+    bench_df = DataFrame(func=String[], input=String[], executor=Vector{Union{String, Missing}}(), 
+            basesize = Vector{Union{Int64,Missing}}(), n_threads=Int64[], memory=Int64[]
+            )
+    bench_df_file_name = string("mutually_friends_memory_",nthreads(),".csv")
 
-for run in bench_runs
-    println("BenchmarkTools run = ", run) 
-    if isnothing(run.ex)
-        suite = run.f(run.start, run.stop)
-    else
-        basesize=div(run.stop-run.start, nthreads())
-        suite = run.f(run.start, run.stop, run.ex(basesize=basesize))
+    for run in bench_runs
+        println("BenchmarkTools run = ", run) 
+        if isnothing(run.ex)
+            suite = run.f(run.start, run.stop)
+        else
+            basesize=div(run.stop-run.start, nthreads())
+            suite = run.f(run.start, run.stop, run.ex(basesize=basesize))
+        end
+        push!(bench_df, (func=String(Symbol(run.f)), input=run.size, 
+                executor=isnothing(run.ex) ? missing : String(Symbol(run.ex)), 
+                basesize = isnothing(run.ex) ? missing : basesize, n_threads=nthreads(),
+                memory=suite.memory))
+        CSV.write(bench_df_file_name, bench_df)
     end
-    push!(bench_df, (func=String(Symbol(run.f)), input=run.size, 
-            executor=isnothing(run.ex) ? missing : String(Symbol(run.ex)), 
-            basesize = isnothing(run.ex) ? missing : basesize, n_threads=nthreads(),
-            memory=suite.memory))
-    CSV.write(bench_df_file_name, bench_df)
 end
 
 open(string("mutually_friends_task_distribution_",nthreads(),".txt"), "w") do io
