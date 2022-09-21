@@ -4,9 +4,9 @@ gcc ../friendly_time.c -o ft -fopenmp &&
 
 for i in {1..10}; do
     echo "Running sequential version"
-    ./fsm 0 50000 >> time_logs/small_seq.txt
-    ./fsm 0 200000 >> time_logs/medium_seq.txt
-    ./fsm 0 350000 >> time_logs/large_seq.txt
+    ./fst 0 50000 >> time_logs/small_seq.txt
+    ./fst 0 200000 >> time_logs/medium_seq.txt
+    ./fst 0 350000 >> time_logs/large_seq.txt
 
     echo "Running OpenMP version with 2 threads"
     OMP_NUM_THREADS=2 ./fm 0 50000 >> time_logs/small_mt_2.txt
