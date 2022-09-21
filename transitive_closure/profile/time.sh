@@ -1,3 +1,4 @@
+echo "Compiling...";
 gcc ../transitive_closure_seq_time.c -o tcst;
 gcc ../transitive_closure_time.c -o tct;
 

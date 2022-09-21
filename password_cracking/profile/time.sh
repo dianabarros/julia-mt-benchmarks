@@ -1,3 +1,4 @@
+echo "Compiling...";
 gcc ../brute_force_password_cracking_seq_time.c -lssl -lcrypto -o bfst
 gcc ../brute_force_password_cracking_time.c -lssl -lcrypto -o bft -fopenmp
 

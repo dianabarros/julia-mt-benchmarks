@@ -1,3 +1,4 @@
+echo "Compiling...";
 gcc ../friendly_sequencial_time.c -o fst;
 gcc ../friendly_time.c -o ft -fopenmp;
 
