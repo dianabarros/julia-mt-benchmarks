@@ -1,28 +1,15 @@
-// Compile md5:
-// gcc brute_force_password_cracking_seq.c -lssl -lcrypto -o bfs
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <openssl/md5.h>
 #include <string.h>
-#include <sys/time.h>
 #include <omp.h>
+#include <sys/resource.h>
+#include <errno.h>
 
 #define MAX 10
 
 int isOver = 0;
 char letters[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
-/*
- * Print a digest of MD5 hash.
-*/
-// void print_digest(unsigned char * hash){
-// 	int x;
-
-// 	for(x = 0; x < MD5_DIGEST_LENGTH; x++)
-//         	printf("%02x", hash[x]);
-// 	printf("\n");
-// }
-
 
 /*
  * Convert hexadecimal string to hash byte.
@@ -47,31 +34,15 @@ int main(int argc, char **argv) {
 	char hash1_str[2*MD5_DIGEST_LENGTH+1];
 	double end;
 	double start;
-	
-	// struct timeval tstart, tend, tstart2, tend2;
+
 	unsigned char hash1[MD5_DIGEST_LENGTH]; // password hash
 	unsigned char hash2[MD5_DIGEST_LENGTH]; // string hashes
 	unsigned char digest[16];
 	unsigned char digest2[16];
 
 	// Input:
-	// r = scanf("%s", hash1_str);
-
-	// Check input.
-	// if (r == EOF || r == 0)
-	// {
-	// 	fprintf(stderr, "Error!\n");
-	// 	exit(1);
-	// }
+	hash1_str = argv[1];
 	
-	// gettimeofday(&tstart, NULL);
-	
-	if (strlen(argv[1]) < sizeof(hash1_str)) {
-		strcpy(hash1_str, argv[1]);
-	} else {
-		printf("aaaaaa");
-		exit(1);
-	}
 	strHex_to_byte(hash1_str, hash1);
 	memset(hash2, 0, MD5_DIGEST_LENGTH);
 	// Generate all possible passwords of different sizes.
@@ -118,10 +89,9 @@ int main(int argc, char **argv) {
 		}
 	}
 	
-	// omp_set_num_threads(12);
 	if (isOver == 0) {
 	//Senhas com 4 caracteres
-	# pragma omp parallel private(str, c, v, b, c1, v1, b1, c2, v2, b2, c3, v3, hash2) shared(letters, hash1_str, hash1, isOver)
+	# pragma omp parallel private(str, c, v, b, c1, v1, b1, c2, v2, b2, c3, v3, tend2, hash2) shared(letters, hash1_str, hash1, isOver)
 	{
 		// printf("This is thread number: %d\n", omp_get_thread_num());
 		memset(str, 0, 5);
@@ -155,7 +125,7 @@ int main(int argc, char **argv) {
 		
 	if (isOver == 0) {
 	//Senhas com 5 caracteres
-	# pragma omp parallel private(str, c, v, b, c1, v1, b1, c2, v2, b2, c3, v3, hash2) shared(letters, hash1_str, hash1, isOver)
+	# pragma omp parallel private(str, c, v, b, c1, v1, b1, c2, v2, b2, c3, v3, tend2, hash2) shared(letters, hash1_str, hash1, isOver)
 	{
 		//Senhas com 5 caracteres
 		memset(str, 0, 6);
@@ -194,7 +164,7 @@ int main(int argc, char **argv) {
 
 	if (isOver == 0) {
 	//Senhas com 6 caracteres
-	# pragma omp parallel private(str, c, v, b, c1, v1, b1, c2, v2, b2, c3, v3, hash2) shared(letters, hash1_str, hash1, isOver)
+	# pragma omp parallel private(str, c, v, b, c1, v1, b1, c2, v2, b2, c3, v3, tend2, hash2) shared(letters, hash1_str, hash1, isOver)
 	{
 			//Senhas com 6 caracteres
 			memset(str, 0, 7);
@@ -238,7 +208,7 @@ int main(int argc, char **argv) {
 	
 	if (isOver == 0) {
 	//Senhas com 7 caracteres
-	# pragma omp parallel private(str, c, v, b, c1, v1, b1, c2, v2, b2, c3, v3, hash2) shared(letters, hash1_str, hash1, isOver)
+	# pragma omp parallel private(str, c, v, b, c1, v1, b1, c2, v2, b2, c3, v3, tend2, hash2) shared(letters, hash1_str, hash1, isOver)
 	{
 			//Senhas com 7 caracteres
 			memset(str, 0, 8);
@@ -287,7 +257,7 @@ int main(int argc, char **argv) {
 	//Senhas com 8 caracteres
 	if (isOver == 0) {
 		
-	# pragma omp parallel private(str, c, v, b, c1, v1, b1, c2, v2, b2, c3, v3, hash2) shared(letters, hash1_str, hash1, isOver)
+	# pragma omp parallel private(str, c, v, b, c1, v1, b1, c2, v2, b2, c3, v3, tend2, hash2) shared(letters, hash1_str, hash1, isOver)
 	{
 			//Senhas com 8 caracteres
 			memset(str, 0, 9);
@@ -338,7 +308,14 @@ int main(int argc, char **argv) {
 			}
 	}
 	}
-	// gettimeofday(&tend, NULL);
-	// printf("Tempo de execução: %ld microseconds\n", ((tend.tv_sec * 1000000 + tend.tv_usec) - (tstart.tv_sec * 1000000 + tstart.tv_usec)));
+
+	struct rusage usage;
+	int ret;
+	ret = getrusage(RUSAGE_SELF, &usage);
+	if(ret == 0)
+        printf("Memory usage: %ld kilobytes\n", usage.ru_maxrss);
+    else
+        printf("Error in getrusage. errno = %d\n", errno);
+
 	exit(0);
 }
