@@ -1,3 +1,8 @@
+// Compile:
+// Linux: gcc -c -fpic shared_lib_friendly.c -fopenmp
+//        gcc -shared -o libfriendly.so shared_lib_friendly.o -fopenmp
+//        export LD_LIBRARY_PATH=<lib_path>:$LD_LIBRARY_PATH
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -12,7 +17,7 @@ int gcd(int u, int v) {
 }
 
 
-void friendly_numbers(long int start, long int end) {
+void friendly_numbers(int n_threads, long int start, long int end) {
 
     // struct timeval start_time, end_time;
 
@@ -36,6 +41,7 @@ void friendly_numbers(long int start, long int end) {
 	long int i, j, factor, ii, sum, done, n;
 
 	// Calculará e registrará a soma dos divisores
+	omp_set_num_threads(n_threads);
     #pragma omp parallel for private(i, ii, sum, done, factor, n)
 	for (i = start; i <= end; i++) {
 
@@ -92,29 +98,4 @@ void friendly_numbers(long int start, long int end) {
 	free(the_num);
 	free(num);
 	free(den);
-}
-
-int main(int argc, char **argv) {
-	long int start;
-	long int end;
-    // struct timeval start_time, end_time;
-
-
-    // while (1) {
-	//     // Recebe os numeros de inicio e fim da busca
-	// 	scanf("%ld %ld", &start, &end);
-	// 	if (start == 0 && end == 0)
-	// 		break;
-	// 	printf("Number %ld to %ld\n", start, end);
-
-	// 	// Encontra os friendly numbers
-	// 	friendly_numbers(start, end);
-
-	// }
-
-	start = atoi(argv[1]);
-	end = atoi(argv[2]);
-	friendly_numbers(start, end);
-
-	return EXIT_SUCCESS;
 }
