@@ -1,6 +1,6 @@
 echo "Compiling...";
 gcc ../transitive_closure_seq_time.c -o tcst &&
-gcc ../transitive_closure_time.c -o tct &&
+gcc ../transitive_closure_time.c -o tct -fopenmp &&
 
 for i in {1..10}; do
     echo "Running sequential version"
