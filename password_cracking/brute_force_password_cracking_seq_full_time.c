@@ -9,6 +9,17 @@
 
 int isOver = 0;
 char letters[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+/*
+ * Print a digest of MD5 hash.
+*/
+// void print_digest(unsigned char * hash){
+// 	int x;
+
+// 	for(x = 0; x < MD5_DIGEST_LENGTH; x++)
+//         	printf("%02x", hash[x]);
+// 	printf("\n");
+// }
+
 
 /*
  * Convert hexadecimal string to hash byte.
@@ -24,30 +35,46 @@ void strHex_to_byte(char * str, unsigned char * hash){
 }
 
 int main(int argc, char **argv) {
+	struct timeval start_time, end_time;
+    gettimeofday(&start_time, NULL);
+
 	char str[MAX+1];
 	int lenMax = MAX;
 	int len;
 	int c, v, b, c1, v1, b1, c2, v2, b2, c3, v3;
 	int ok = 0, r, idx = 0;
 	int isOver2 = 0;
-	char *hash1_str; //[2*MD5_DIGEST_LENGTH+1];
+	char hash1_str[2*MD5_DIGEST_LENGTH+1];
 	double end;
 	double start;
-
+	
+	// struct timeval tstart, tend, tstart2, tend2;
 	unsigned char hash1[MD5_DIGEST_LENGTH]; // password hash
 	unsigned char hash2[MD5_DIGEST_LENGTH]; // string hashes
 	unsigned char digest[16];
 	unsigned char digest2[16];
 
 	// Input:
-	hash1_str = argv[1];
+	// r = scanf("%s", hash1_str);
+
+	// Check input.
+	// if (r == EOF || r == 0)
+	// {
+	// 	fprintf(stderr, "Error!\n");
+	// 	exit(1);
+	// }
 	
+	// gettimeofday(&tstart, NULL);
+	
+	if (strlen(argv[1]) < sizeof(hash1_str)) {
+		strcpy(hash1_str, argv[1]);
+	} else {
+		printf("aaaaaa");
+		exit(1);
+	}
 	strHex_to_byte(hash1_str, hash1);
 	memset(hash2, 0, MD5_DIGEST_LENGTH);
 	// Generate all possible passwords of different sizes.
-
-	struct timeval start_time, end_time;
-    gettimeofday(&start_time, NULL);
 
 	////Senhas com 1 caracter
 	memset(str, 0, 2);
@@ -91,13 +118,14 @@ int main(int argc, char **argv) {
 		}
 	}
 	
+	// omp_set_num_threads(12);
 	if (isOver == 0) {
 	//Senhas com 4 caracteres
-	// # pragma omp parallel private(str, c, v, b, c1, v1, b1, c2, v2, b2, c3, v3, tend2, hash2) shared(letters, hash1_str, hash1, isOver)
+	// # pragma omp parallel private(str, c, v, b, c1, v1, b1, c2, v2, b2, c3, v3, hash2) shared(letters, hash1_str, hash1, isOver)
 	{
 		// printf("This is thread number: %d\n", omp_get_thread_num());
 		memset(str, 0, 5);
-		// # pragma omp for
+		#pragma omp for
 		for (c = 0; c < strlen(letters); ++c) {
 			str[0] = letters[c];
 			if (isOver == 0) {
@@ -112,7 +140,7 @@ int main(int argc, char **argv) {
 									MD5((unsigned char *) str, strlen(str), hash2);
 									if((strncmp((char*)hash1, (char*)hash2, MD5_DIGEST_LENGTH)) == 0){
 										// printf("found: %s\n", str);
-										// # pragma omp critical
+										#pragma omp critical
 										isOver = 1;
 									}
 								}
@@ -127,11 +155,11 @@ int main(int argc, char **argv) {
 		
 	if (isOver == 0) {
 	//Senhas com 5 caracteres
-	// # pragma omp parallel private(str, c, v, b, c1, v1, b1, c2, v2, b2, c3, v3, tend2, hash2) shared(letters, hash1_str, hash1, isOver)
+	// # pragma omp parallel private(str, c, v, b, c1, v1, b1, c2, v2, b2, c3, v3, hash2) shared(letters, hash1_str, hash1, isOver)
 	{
 		//Senhas com 5 caracteres
 		memset(str, 0, 6);
-		// # pragma omp for
+		#pragma omp for
 		for (c = 0; c < strlen(letters); ++c) {
 			str[0] = letters[c];
 			if (isOver == 0) {
@@ -149,7 +177,7 @@ int main(int argc, char **argv) {
 											MD5((unsigned char *) str, strlen(str), hash2);
 											if((strncmp((char*)hash1, (char*)hash2, MD5_DIGEST_LENGTH)) == 0){
 												// printf("found: %s\n", str);
-												// # pragma omp critical
+												#pragma omp critical
 												isOver = 1;
 											}
 										}
@@ -166,11 +194,11 @@ int main(int argc, char **argv) {
 
 	if (isOver == 0) {
 	//Senhas com 6 caracteres
-	// # pragma omp parallel private(str, c, v, b, c1, v1, b1, c2, v2, b2, c3, v3, tend2, hash2) shared(letters, hash1_str, hash1, isOver)
+	// # pragma omp parallel private(str, c, v, b, c1, v1, b1, c2, v2, b2, c3, v3, hash2) shared(letters, hash1_str, hash1, isOver)
 	{
 			//Senhas com 6 caracteres
 			memset(str, 0, 7);
-			// # pragma omp for
+			#pragma omp for
 			for (c = 0; c < strlen(letters); ++c) {
 				str[0] = letters[c];
 				if (isOver == 0) {
@@ -191,7 +219,7 @@ int main(int argc, char **argv) {
 														MD5((unsigned char *) str, strlen(str), hash2);
 														if((strncmp((char*)hash1, (char*)hash2, MD5_DIGEST_LENGTH)) == 0){
 															// printf("found: %s\n", str);
-															// # pragma omp critical
+															#pragma omp critical
 															isOver = 1;
 														}
 													}
@@ -210,11 +238,11 @@ int main(int argc, char **argv) {
 	
 	if (isOver == 0) {
 	//Senhas com 7 caracteres
-	// # pragma omp parallel private(str, c, v, b, c1, v1, b1, c2, v2, b2, c3, v3, tend2, hash2) shared(letters, hash1_str, hash1, isOver)
+	// # pragma omp parallel private(str, c, v, b, c1, v1, b1, c2, v2, b2, c3, v3, hash2) shared(letters, hash1_str, hash1, isOver)
 	{
 			//Senhas com 7 caracteres
 			memset(str, 0, 8);
-			// # pragma omp for
+			#pragma omp for
 			for (c = 0; c < strlen(letters); ++c) {
 				str[0] = letters[c];
 				if (isOver == 0) {
@@ -238,7 +266,7 @@ int main(int argc, char **argv) {
 																MD5((unsigned char *) str, strlen(str), hash2);
 																if((strncmp((char*)hash1, (char*)hash2, MD5_DIGEST_LENGTH)) == 0){
 																	// printf("found: %s\n", str);
-																	// # pragma omp critical
+																	#pragma omp critical
 																	isOver = 1;
 																}
 															}
@@ -259,11 +287,11 @@ int main(int argc, char **argv) {
 	//Senhas com 8 caracteres
 	if (isOver == 0) {
 		
-	// # pragma omp parallel private(str, c, v, b, c1, v1, b1, c2, v2, b2, c3, v3, tend2, hash2) shared(letters, hash1_str, hash1, isOver)
+	// # pragma omp parallel private(str, c, v, b, c1, v1, b1, c2, v2, b2, c3, v3, hash2) shared(letters, hash1_str, hash1, isOver)
 	{
 			//Senhas com 8 caracteres
 			memset(str, 0, 9);
-			// # pragma omp for
+			#pragma omp for
 			for (c = 0; c < strlen(letters); ++c) {
 				str[0] = letters[c];
 				if (isOver == 0) {
@@ -290,7 +318,7 @@ int main(int argc, char **argv) {
 																		MD5((unsigned char *) str, strlen(str), hash2);
 																		if((strncmp((char*)hash1, (char*)hash2, MD5_DIGEST_LENGTH)) == 0){
 																			// printf("found: %s\n", str);
-																			// # pragma omp critical
+																			#pragma omp critical
 																			isOver = 1;
 																		}
 																	}
@@ -310,8 +338,9 @@ int main(int argc, char **argv) {
 			}
 	}
 	}
+
 	gettimeofday(&end_time, NULL);
 	printf("%ld\n", ((end_time.tv_sec * 1000000 + end_time.tv_usec) - (start_time.tv_sec * 1000000 + start_time.tv_usec)));
-
+	
 	exit(0);
 }
