@@ -37,7 +37,7 @@ void friendly_numbers(long int start, long int end) {
     #pragma omp parallel for private(i, ii, sum, done, factor, n)
 	for (i = start; i <= end; i++) {
 
-		printf("ThreadId: %d\n", omp_get_thread_num());
+		// printf("ThreadId: %d\n", omp_get_thread_num());
 
 		ii = i - start; // index começando do 0
 		sum = 1 + i; // Primeira soma (1 + o proprio numero)
