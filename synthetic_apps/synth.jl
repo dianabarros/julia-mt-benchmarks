@@ -222,13 +222,13 @@ function balanced_spawn(N::Int64, k::Int64, n::Array{Float64,2}, chunksize::Int6
 end
 
 function debug(f::T, N::Int64, k::Int64, n::Array{Float64,2}) where T
-    suite = Dict(
-        "main_loop" => Dict(
-            "total_stats" => UndefInitializer(),
+    suite = Dict{Any,Any}(
+        "main_loop" => Dict{Any,Any}(
+            "total_stats" => nothing,
             "task_distribution" => [Int64[] for _ in 1:nthreads()],
             "thread_time" => zeros(Float64, nthreads())
         ),
-        "app" => UndefInitializer()
+        "app" => nothing
     )
     suite["app"] = @timed f(N, k, n, suite=suite)
     return BenchmarkSample(suite)
