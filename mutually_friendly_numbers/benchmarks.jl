@@ -31,13 +31,14 @@ using DataFrames, CSV
 include("friendly_numbers.jl")
 
 BenchmarkTools.DEFAULT_PARAMETERS.samples = 10
+BenchmarkTools.DEFAULT_PARAMETERS.seconds = 3600
 BenchmarkTools.DEFAULT_PARAMETERS.evals = 1
 
-# TODO: Pick better inputs
+
 inputs = Dict(
     "small" => (0, 50000),
-    "medium" => (0, 100000),
-    "large" => (0, 150000)
+    "medium" => (0, 200000),
+    "large" => (0, 350000)
 )
 if !isnothing(args["inputs"])
     arg_inputs = Dict()

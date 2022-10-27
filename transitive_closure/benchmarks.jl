@@ -16,6 +16,9 @@ function parse_commandline()
         "--its"
             arg_type = Int
             default = 10
+        "--benchmarktools"
+            action = :store_true
+            default = false
     end
 
     return parse_args(s)
@@ -93,9 +96,11 @@ nNodes, bytes_per_row, graph = read_file("transitive_closure/transitive_closure2
 debug(debug_warshall!, nNodes, bytes_per_row, graph)
 debug(debug_warshall_threads!, nNodes, bytes_per_row, graph)
 debug(debug_warshall_floops!, nNodes, bytes_per_row, graph, ex=ThreadedEx(basesize=2))
-warshall!(nNodes, bytes_per_row, graph)
-warshall_threads!(nNodes, bytes_per_row, graph)
-warshall_floops!(nNodes, bytes_per_row, graph, ThreadedEx(basesize=2))
+if args["benchmarktools"]
+    warshall!(nNodes, bytes_per_row, graph)
+    warshall_threads!(nNodes, bytes_per_row, graph)
+    warshall_floops!(nNodes, bytes_per_row, graph, ThreadedEx(basesize=2))
+end
 
 df = DataFrame(func=String[], input=String[], executor=Vector{Union{String,Missing}}(), n_threads=Int64[], 
 basesize=Vector{Union{Int64,Missing}}(),total_bytes=Int64[], total_time=Float64[])
@@ -134,22 +139,24 @@ for run in runs
     end
 end
 
-bench_df = DataFrame(func=String[], input=String[], executor=Vector{Union{String,Missing}}(), basesize=Vector{Union{Int64,Missing}}(), n_threads=Int64[], memory=Int64[])
-bench_df_file_name = string("transitive_closure_memory_",nthreads(),".csv")
+if args["benchmarktools"]
+    bench_df = DataFrame(func=String[], input=String[], executor=Vector{Union{String,Missing}}(), basesize=Vector{Union{Int64,Missing}}(), n_threads=Int64[], memory=Int64[])
+    bench_df_file_name = string("transitive_closure_memory_",nthreads(),".csv")
 
-for run in bench_runs
-    println("BenchmarkTools run = ", 
-        (f=run.f, nNodes=run.nNodes, bytes_per_row=run.bytes_per_row, ex=run.ex, basesize=run.basesize, check_sequential=run.check_sequential) 
-    ) 
-    if isnothing(run.ex)
-        suite = benchmark(run.f, run.nNodes, run.bytes_per_row, run.graph)
-    else
-        suite = benchmark(run.f, run.nNodes, run.bytes_per_row, run.graph, run.ex(basesize=run.basesize))
+    for run in bench_runs
+        println("BenchmarkTools run = ", 
+            (f=run.f, nNodes=run.nNodes, bytes_per_row=run.bytes_per_row, ex=run.ex, basesize=run.basesize, check_sequential=run.check_sequential) 
+        ) 
+        if isnothing(run.ex)
+            suite = benchmark(run.f, run.nNodes, run.bytes_per_row, run.graph)
+        else
+            suite = benchmark(run.f, run.nNodes, run.bytes_per_row, run.graph, run.ex(basesize=run.basesize))
+        end
+        push!(bench_df, (func=String(Symbol(run.f)), input=run.size, executor=isnothing(run.ex) ? missing : String(Symbol(run.ex)),
+                basesize=isnothing(run.basesize) ? missing : run.basesize, n_threads=nthreads(),
+                memory=suite.memory))
+        CSV.write(bench_df_file_name, bench_df)
     end
-    push!(bench_df, (func=String(Symbol(run.f)), input=run.size, executor=isnothing(run.ex) ? missing : String(Symbol(run.ex)),
-            basesize=isnothing(run.basesize) ? missing : run.basesize, n_threads=nthreads(),
-            memory=suite.memory))
-    CSV.write(bench_df_file_name, bench_df)
 end
 
 open(string("transitive_closure_task_distribution_",nthreads(), ".txt"), "w") do io
