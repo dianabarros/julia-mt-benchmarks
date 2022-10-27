@@ -9,7 +9,7 @@ for i in 2 4 8 16; do
 done;
 for i in 2 4 8 16; do
     echo "Running Transitive Closure with $i threads.";
-    julia -t $i transitive_closure/benchmarks.jl --funcs [debug_warshall_threads!,debug_warshall_];
+    julia -t $i transitive_closure/benchmarks.jl --funcs [debug_warshall_threads!,debug_warshall!];
 done;
 end_time=$(date +%s);
 elapsed=$(( end_time - start_time ));
