@@ -107,33 +107,33 @@ df = DataFrame(iteration = Int64[], func=String[], input=String[], executor=Vect
     )
 df_file_name = string("mutually_friends_results_",nthreads(),".csv")
 
-task_distribution = []
-task_times = []
+# task_distribution = []
+# task_times = []
 
 println("Running...")
 for run in runs
-    it_dist = Dict()
-    it_ttime = Dict()
+    # it_dist = Dict()
+    # it_ttime = Dict()
     for it in 1:iterations
         println("run = ", run) 
         basesize=div(run.stop-run.start, nthreads())
         bench_sample = debug(
             run.f, run.start, run.stop, ex=isnothing(run.ex) ? nothing : run.ex(basesize=basesize), check_sequential=run.check_sequential
         )
-        it_dist[it] = bench_sample.task_distribution
-        if haskey(bench_sample.suite, "task")
-            it_ttime[it] = bench_sample.suite["task"]
-        end
+        # it_dist[it] = bench_sample.task_distribution
+        # if haskey(bench_sample.suite, "task")
+        #     it_ttime[it] = bench_sample.suite["task"]
+        # end
         push!(df, (iteration=it, func=String(Symbol(run.f)), input=run.size, 
             executor=isnothing(run.ex) ? missing : String(Symbol(run.ex)), 
             basesize = isnothing(run.ex) ? missing : basesize, n_threads=nthreads(), total_bytes=bench_sample.suite["app"].bytes, 
             total_time=bench_sample.suite["app"].time,main_loop_bytes=bench_sample.suite["loop"].bytes, main_loop_time=bench_sample.suite["loop"].time))
         CSV.write(df_file_name, df)
     end
-    push!(task_distribution, (run=run, dist=it_dist))
-    if length(it_ttime) != 0
-        push!(task_times, (run=run, dist=it_ttime))
-    end
+    # push!(task_distribution, (run=run, dist=it_dist))
+    # if length(it_ttime) != 0
+    #     push!(task_times, (run=run, dist=it_ttime))
+    # end
 end
 
 if args["benchmarktools"]
@@ -158,12 +158,12 @@ if args["benchmarktools"]
     end
 end
 
-open(string("mutually_friends_task_distribution_",nthreads(),".txt"), "w") do io
-    print(io, task_distribution)
-end
+# open(string("mutually_friends_task_distribution_",nthreads(),".txt"), "w") do io
+#     print(io, task_distribution)
+# end
 
-if length(task_times) != 0
-    open(string("mutually_friends_task_times_",nthreads(),".txt"), "w") do io
-        print(io, task_times)
-    end
-end
+# if length(task_times) != 0
+#     open(string("mutually_friends_task_times_",nthreads(),".txt"), "w") do io
+#         print(io, task_times)
+#     end
+# end

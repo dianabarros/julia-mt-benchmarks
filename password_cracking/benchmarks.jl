@@ -159,27 +159,27 @@ df = DataFrame(iteration = Int64[], func=String[], input=String[], executor=Vect
                 loop_6_time=Float64[], loop_7_time=Float64[], loop_8_time=Float64[])
 df_file_name = string("pw_cracking_results_",nthreads(),".csv")
 
-task_distribution = []
-task_times = []
+# task_distribution = []
+# task_times = []
 
 println("Running...")
 for run in runs
-    it_dist = Dict()
-    it_ttime = Dict()
+    # it_dist = Dict()
+    # it_ttime = Dict()
     for it in 1:iterations
         println("run = ", run)
         bench_sample = debug_crack_password(
             run.f, run.hash_str, ex=isnothing(run.ex) ? nothing : run.ex(basesize=run.basesize), check_sequential=run.check_sequential
         )
-        it_dist[it] = bench_sample.loop_tasks
-        for (key, value) in bench_sample.suite
-            if !isnothing(findfirst("tasks", key))
-                if !haskey(it_ttime,it) 
-                    it_ttime[it] = Dict()
-                end
-                it_ttime[it][key] = value
-            end
-        end
+        # it_dist[it] = bench_sample.loop_tasks
+        # for (key, value) in bench_sample.suite
+        #     if !isnothing(findfirst("tasks", key))
+        #         if !haskey(it_ttime,it) 
+        #             it_ttime[it] = Dict()
+        #         end
+        #         it_ttime[it][key] = value
+        #     end
+        # end
         push!(df, (iteration=it, func=String(Symbol(run.f)), input=run.pw, executor=isnothing(run.ex) ? missing : String(Symbol(run.ex)), basesize=isnothing(run.basesize) ? missing : run.basesize, 
             n_threads=nthreads(), total_bytes=bench_sample.suite["app"].bytes, total_time=bench_sample.suite["app"].time,
             main_loop_bytes=bench_sample.suite["main_loop"].bytes, main_loop_time=bench_sample.suite["main_loop"].time,
@@ -194,10 +194,10 @@ for run in runs
             )
         CSV.write(df_file_name, df)
     end
-    push!(task_distribution, (run=run, dist=it_dist))
-    if length(it_ttime) != 0
-        push!(task_times, (run=run, dist=it_ttime))
-    end
+    # push!(task_distribution, (run=run, dist=it_dist))
+    # if length(it_ttime) != 0
+    #     push!(task_times, (run=run, dist=it_ttime))
+    # end
 end
 
 if args["benchmarktools"]
@@ -218,12 +218,12 @@ if args["benchmarktools"]
     end
 end
 
-open(string("pw_craking_task_distribution_",nthreads(),".txt"), "w") do io
-    print(io, task_distribution)
-end
+# open(string("pw_craking_task_distribution_",nthreads(),".txt"), "w") do io
+#     print(io, task_distribution)
+# end
 
-if length(task_times) != 0
-    open(string("pw_craking_task_times_",nthreads(),".txt"), "w") do io
-        print(io, task_times)
-    end
-end
+# if length(task_times) != 0
+#     open(string("pw_craking_task_times_",nthreads(),".txt"), "w") do io
+#         print(io, task_times)
+#     end
+# end
