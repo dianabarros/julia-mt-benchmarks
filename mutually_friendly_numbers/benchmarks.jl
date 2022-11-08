@@ -9,6 +9,7 @@ function parse_commandline()
     @add_arg_table s begin
         "--inputs"
         "--funcs"
+        "--bench-funcs"
         "--executors"
         "--no_check_sequential"
             action = :store_true
@@ -52,7 +53,11 @@ funcs =[debug_friendly_numbers, debug_friendly_numbers_threads, debug_friendly_n
 if !isnothing(args["funcs"])
     funcs = eval(Meta.parse(args["funcs"]))
 end
+
 benchmark_funcs = [benchmark_friendly_numbers, benchmark_friendly_numbers_floop, benchmark_friendly_numbers_threads]
+if !isnothing(args["bench-funcs"])
+    funcs = eval(Meta.parse(args["bench-funcs"]))
+end
 
 executors = [ThreadedEx, WorkStealingEx, DepthFirstEx, TaskPoolEx, NondeterministicEx]
 if !isnothing(args["executors"])

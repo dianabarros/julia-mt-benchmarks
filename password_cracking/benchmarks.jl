@@ -9,6 +9,7 @@ function parse_commandline()
     @add_arg_table s begin
         "--inputs"
         "--funcs"
+        "--bench-funcs"
         "--executors"
         "--no_check_sequential"
             action = :store_true
@@ -87,7 +88,11 @@ funcs = [debug_brute_force, debug_brute_force_threads, debug_brute_force_floop]
 if !isnothing(args["funcs"])
     funcs = eval(Meta.parse(args["funcs"]))
 end
+
 benchmark_funcs = [brute_force, brute_force_floop, brute_force_threads]
+if !isnothing(args["bench-funcs"])
+    funcs = eval(Meta.parse(args["bench-funcs"]))
+end
 
 basesizes = [div(length(letters), nthreads())]
 
