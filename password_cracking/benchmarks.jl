@@ -10,15 +10,15 @@ function parse_commandline()
         "--inputs"
         "--funcs"
         "--executors"
-        "--check_sequential"
+        "--no_check_sequential"
             action = :store_true
-            default = false
         "--its"
             arg_type = Int
             default = 10
         "--benchmarktools"
             action = :store_true
-            default = false
+        "--timed"
+            action = :store_true
     end
 
     return parse_args(s)
@@ -97,7 +97,7 @@ if !isnothing(args["executors"])
 end
 
 iterations = args["its"]
-check_sequential = args["check_sequential"]
+check_sequential = !args["no_check_sequential"]
 
 println("Preparing runs")
 runs = []
@@ -143,61 +143,65 @@ end
 
 # compile run
 println("Running compile runs")
-debug_crack_password(debug_brute_force,"800618943025315f869e4e1f09471012")
-debug_crack_password(debug_brute_force_threads,"800618943025315f869e4e1f09471012")
-debug_crack_password(debug_brute_force_floop,"800618943025315f869e4e1f09471012", ex=ThreadedEx(basesize=2))
+if args["timed"]
+    debug_crack_password(debug_brute_force,"800618943025315f869e4e1f09471012")
+    debug_crack_password(debug_brute_force_threads,"800618943025315f869e4e1f09471012")
+    debug_crack_password(debug_brute_force_floop,"800618943025315f869e4e1f09471012", ex=ThreadedEx(basesize=2))
+end
 if args["benchmarktools"]
     brute_force(hex2bytes("800618943025315f869e4e1f09471012"))
     brute_force_threads(hex2bytes("800618943025315f869e4e1f09471012"))
     brute_force_floop(hex2bytes("800618943025315f869e4e1f09471012"), ThreadedEx(basesize=2))
 end 
 
-df = DataFrame(iteration = Int64[], func=String[], input=String[], executor=Vector{Union{String,Missing}}(), 
-                basesize=Vector{Union{Int64,Missing}}(), n_threads=Int64[], total_bytes=Int64[], 
-                main_loop_bytes=Int64[], main_loop_time=Float64[], total_time=Float64[], loop_1_time=Float64[], 
-                loop_2_time=Float64[], loop_3_time=Float64[], loop_4_time=Float64[], loop_5_time=Float64[], 
-                loop_6_time=Float64[], loop_7_time=Float64[], loop_8_time=Float64[])
-df_file_name = string("pw_cracking_results_",nthreads(),".csv")
+if args["timed"]
+    df = DataFrame(iteration = Int64[], func=String[], input=String[], executor=Vector{Union{String,Missing}}(), 
+                    basesize=Vector{Union{Int64,Missing}}(), n_threads=Int64[], total_bytes=Int64[], 
+                    main_loop_bytes=Int64[], main_loop_time=Float64[], total_time=Float64[], loop_1_time=Float64[], 
+                    loop_2_time=Float64[], loop_3_time=Float64[], loop_4_time=Float64[], loop_5_time=Float64[], 
+                    loop_6_time=Float64[], loop_7_time=Float64[], loop_8_time=Float64[])
+    df_file_name = string("pw_cracking_results_",nthreads(),".csv")
 
-# task_distribution = []
-# task_times = []
+    # task_distribution = []
+    # task_times = []
 
-println("Running...")
-for run in runs
-    # it_dist = Dict()
-    # it_ttime = Dict()
-    for it in 1:iterations
-        println("run = ", run)
-        bench_sample = debug_crack_password(
-            run.f, run.hash_str, ex=isnothing(run.ex) ? nothing : run.ex(basesize=run.basesize), check_sequential=run.check_sequential
-        )
-        # it_dist[it] = bench_sample.loop_tasks
-        # for (key, value) in bench_sample.suite
-        #     if !isnothing(findfirst("tasks", key))
-        #         if !haskey(it_ttime,it) 
-        #             it_ttime[it] = Dict()
-        #         end
-        #         it_ttime[it][key] = value
-        #     end
-        # end
-        push!(df, (iteration=it, func=String(Symbol(run.f)), input=run.pw, executor=isnothing(run.ex) ? missing : String(Symbol(run.ex)), basesize=isnothing(run.basesize) ? missing : run.basesize, 
-            n_threads=nthreads(), total_bytes=bench_sample.suite["app"].bytes, total_time=bench_sample.suite["app"].time,
-            main_loop_bytes=bench_sample.suite["main_loop"].bytes, main_loop_time=bench_sample.suite["main_loop"].time,
-            loop_1_time=haskey(bench_sample.suite, "loop_1") ? bench_sample.suite["loop_1"].time : 0.0, 
-            loop_2_time=haskey(bench_sample.suite, "loop_2") ? bench_sample.suite["loop_2"].time : 0.0,
-            loop_3_time=haskey(bench_sample.suite, "loop_3") ? bench_sample.suite["loop_3"].time : 0.0,
-            loop_4_time=haskey(bench_sample.suite, "loop_4") ? bench_sample.suite["loop_4"].time : 0.0,
-            loop_5_time=haskey(bench_sample.suite, "loop_5") ? bench_sample.suite["loop_5"].time : 0.0,
-            loop_6_time=haskey(bench_sample.suite, "loop_6") ? bench_sample.suite["loop_6"].time : 0.0,
-            loop_7_time=haskey(bench_sample.suite, "loop_7") ? bench_sample.suite["loop_7"].time : 0.0,
-            loop_8_time=haskey(bench_sample.suite, "loop_8") ? bench_sample.suite["loop_8"].time : 0.0)
+    println("Running...")
+    for run in runs
+        # it_dist = Dict()
+        # it_ttime = Dict()
+        for it in 1:iterations
+            println("run = ", run)
+            bench_sample = debug_crack_password(
+                run.f, run.hash_str, ex=isnothing(run.ex) ? nothing : run.ex(basesize=run.basesize), check_sequential=run.check_sequential
             )
-        CSV.write(df_file_name, df)
+            # it_dist[it] = bench_sample.loop_tasks
+            # for (key, value) in bench_sample.suite
+            #     if !isnothing(findfirst("tasks", key))
+            #         if !haskey(it_ttime,it) 
+            #             it_ttime[it] = Dict()
+            #         end
+            #         it_ttime[it][key] = value
+            #     end
+            # end
+            push!(df, (iteration=it, func=String(Symbol(run.f)), input=run.pw, executor=isnothing(run.ex) ? missing : String(Symbol(run.ex)), basesize=isnothing(run.basesize) ? missing : run.basesize, 
+                n_threads=nthreads(), total_bytes=bench_sample.suite["app"].bytes, total_time=bench_sample.suite["app"].time,
+                main_loop_bytes=bench_sample.suite["main_loop"].bytes, main_loop_time=bench_sample.suite["main_loop"].time,
+                loop_1_time=haskey(bench_sample.suite, "loop_1") ? bench_sample.suite["loop_1"].time : 0.0, 
+                loop_2_time=haskey(bench_sample.suite, "loop_2") ? bench_sample.suite["loop_2"].time : 0.0,
+                loop_3_time=haskey(bench_sample.suite, "loop_3") ? bench_sample.suite["loop_3"].time : 0.0,
+                loop_4_time=haskey(bench_sample.suite, "loop_4") ? bench_sample.suite["loop_4"].time : 0.0,
+                loop_5_time=haskey(bench_sample.suite, "loop_5") ? bench_sample.suite["loop_5"].time : 0.0,
+                loop_6_time=haskey(bench_sample.suite, "loop_6") ? bench_sample.suite["loop_6"].time : 0.0,
+                loop_7_time=haskey(bench_sample.suite, "loop_7") ? bench_sample.suite["loop_7"].time : 0.0,
+                loop_8_time=haskey(bench_sample.suite, "loop_8") ? bench_sample.suite["loop_8"].time : 0.0)
+                )
+            CSV.write(df_file_name, df)
+        end
+        # push!(task_distribution, (run=run, dist=it_dist))
+        # if length(it_ttime) != 0
+        #     push!(task_times, (run=run, dist=it_ttime))
+        # end
     end
-    # push!(task_distribution, (run=run, dist=it_dist))
-    # if length(it_ttime) != 0
-    #     push!(task_times, (run=run, dist=it_ttime))
-    # end
 end
 
 if args["benchmarktools"]

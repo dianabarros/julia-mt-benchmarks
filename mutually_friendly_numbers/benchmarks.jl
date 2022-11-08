@@ -10,15 +10,15 @@ function parse_commandline()
         "--inputs"
         "--funcs"
         "--executors"
-        "--check_sequential"
+        "--no_check_sequential"
             action = :store_true
-            default = false
         "--its"
             arg_type = Int
             default = 10
         "--benchmarktools"
             action = :store_true
-            default = false
+        "--timed"
+            action = :store_true
     end
 
     return parse_args(s)
@@ -60,7 +60,7 @@ if !isnothing(args["executors"])
 end
 
 iterations = args["its"]
-check_sequential = args["check_sequential"]
+check_sequential = !args["no_check_sequential"]
 
 println("Preparing runs")
 runs = []
@@ -92,48 +92,52 @@ end
 
 # compile run
 println("Running compile runs")
-debug(debug_friendly_numbers, 0, 10)
-debug(debug_friendly_numbers_threads, 0, 10)
-debug(debug_friendly_numbers_floop, 0, 10, ex=ThreadedEx(basesize=2))
+if !args["timed"]
+    debug(debug_friendly_numbers, 0, 10)
+    debug(debug_friendly_numbers_threads, 0, 10)
+    debug(debug_friendly_numbers_floop, 0, 10, ex=ThreadedEx(basesize=2))
+end
 if args["benchmarktools"]
     benchmark_friendly_numbers(0, 10)
     benchmark_friendly_numbers_threads(0, 10)
     benchmark_friendly_numbers_floop(0, 10, ThreadedEx(basesize=2))
 end
 
-df = DataFrame(iteration = Int64[], func=String[], input=String[], executor=Vector{Union{String, Missing}}(), 
-    basesize = Vector{Union{Int64,Missing}}(), n_threads=Int64[], total_bytes=Int64[], total_time=Float64[],
-    main_loop_bytes=Int64[], main_loop_time=Float64[]
-    )
-df_file_name = string("mutually_friends_results_",nthreads(),".csv")
-
-# task_distribution = []
-# task_times = []
-
-println("Running...")
-for run in runs
-    # it_dist = Dict()
-    # it_ttime = Dict()
-    for it in 1:iterations
-        println("run = ", run) 
-        basesize=div(run.stop-run.start, nthreads())
-        bench_sample = debug(
-            run.f, run.start, run.stop, ex=isnothing(run.ex) ? nothing : run.ex(basesize=basesize), check_sequential=run.check_sequential
+if args["timed"]
+    df = DataFrame(iteration = Int64[], func=String[], input=String[], executor=Vector{Union{String, Missing}}(), 
+        basesize = Vector{Union{Int64,Missing}}(), n_threads=Int64[], total_bytes=Int64[], total_time=Float64[],
+        main_loop_bytes=Int64[], main_loop_time=Float64[]
         )
-        # it_dist[it] = bench_sample.task_distribution
-        # if haskey(bench_sample.suite, "task")
-        #     it_ttime[it] = bench_sample.suite["task"]
+    df_file_name = string("mutually_friends_results_",nthreads(),".csv")
+
+    # task_distribution = []
+    # task_times = []
+
+    println("Running...")
+    for run in runs
+        # it_dist = Dict()
+        # it_ttime = Dict()
+        for it in 1:iterations
+            println("run = ", run) 
+            basesize=div(run.stop-run.start, nthreads())
+            bench_sample = debug(
+                run.f, run.start, run.stop, ex=isnothing(run.ex) ? nothing : run.ex(basesize=basesize), check_sequential=run.check_sequential
+            )
+            # it_dist[it] = bench_sample.task_distribution
+            # if haskey(bench_sample.suite, "task")
+            #     it_ttime[it] = bench_sample.suite["task"]
+            # end
+            push!(df, (iteration=it, func=String(Symbol(run.f)), input=run.size, 
+                executor=isnothing(run.ex) ? missing : String(Symbol(run.ex)), 
+                basesize = isnothing(run.ex) ? missing : basesize, n_threads=nthreads(), total_bytes=bench_sample.suite["app"].bytes, 
+                total_time=bench_sample.suite["app"].time,main_loop_bytes=bench_sample.suite["loop"].bytes, main_loop_time=bench_sample.suite["loop"].time))
+            CSV.write(df_file_name, df)
+        end
+        # push!(task_distribution, (run=run, dist=it_dist))
+        # if length(it_ttime) != 0
+        #     push!(task_times, (run=run, dist=it_ttime))
         # end
-        push!(df, (iteration=it, func=String(Symbol(run.f)), input=run.size, 
-            executor=isnothing(run.ex) ? missing : String(Symbol(run.ex)), 
-            basesize = isnothing(run.ex) ? missing : basesize, n_threads=nthreads(), total_bytes=bench_sample.suite["app"].bytes, 
-            total_time=bench_sample.suite["app"].time,main_loop_bytes=bench_sample.suite["loop"].bytes, main_loop_time=bench_sample.suite["loop"].time))
-        CSV.write(df_file_name, df)
     end
-    # push!(task_distribution, (run=run, dist=it_dist))
-    # if length(it_ttime) != 0
-    #     push!(task_times, (run=run, dist=it_ttime))
-    # end
 end
 
 if args["benchmarktools"]
