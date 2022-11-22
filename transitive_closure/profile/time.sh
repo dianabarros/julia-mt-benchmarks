@@ -1,5 +1,5 @@
 # SAME AS FULL TIME
-
+start_time=$(date +%s);
 echo "Compiling...";
 gcc ../transitive_closure_seq_time.c -o tcst &&
 gcc ../transitive_closure_time.c -o tct -fopenmp &&
@@ -30,3 +30,6 @@ for i in {1..10}; do
     OMP_NUM_THREADS=16 ./tct < ../2560_nodes.in >> time_logs/medium_mt_16.txt
     OMP_NUM_THREADS=16 ./tct < ../transitive_closure.in >> time_logs/large_mt_16.txt
 done;
+end_time=$(date +%s);
+elapsed=$(( end_time - start_time ));
+eval "echo Elapsed time: $(date -ud "@$elapsed" +'$((%s/3600/24)) days %H hr %M min %S sec')";

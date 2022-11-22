@@ -1,3 +1,4 @@
+start_time=$(date +%s);
 echo "Compiling...";
 gcc ../friendly_sequencial_full_time.c -o fsft &&
 gcc ../friendly_full_time.c -o fft -fopenmp && 
@@ -28,3 +29,6 @@ for i in {1..10}; do
     OMP_NUM_THREADS=16 ./fft 0 200000 >> full_time_logs/medium_mt_16.txt
     OMP_NUM_THREADS=16 ./fft 0 350000 >> full_time_logs/large_mt_16.txt
 done;
+end_time=$(date +%s);
+elapsed=$(( end_time - start_time ));
+eval "echo Elapsed time: $(date -ud "@$elapsed" +'$((%s/3600/24)) days %H hr %M min %S sec')";
