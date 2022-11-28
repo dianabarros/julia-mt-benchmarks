@@ -1,26 +1,34 @@
+start_time=$(date +%s);
+echo "Compiling...";
+gcc ../friendly_sequencial.c -o fsm &&
+gcc ../friendly.c -o fm -fopenmp && 
+
 for i in {1..10}; do
     echo "Running sequential version"
-    command time -v --output=mem_logs/small_seq_log_${i}.txt ../fsm 0 50000 
-    command time -v --output=mem_logs/medium_seq_log_${i}.txt ../fsm 0 200000
-    command time -v --output=mem_logs/large_seq_log_${i}.txt ../fsm 0 350000
+    command time -v --output=mem_logs/small_seq_log_${i}.txt ./fsm 0 50000 
+    command time -v --output=mem_logs/medium_seq_log_${i}.txt ./fsm 0 200000
+    command time -v --output=mem_logs/large_seq_log_${i}.txt ./fsm 0 350000
 
     echo "Running OpenMP version with 2 threads"
-    OMP_NUM_THREADS=2 command time -v --output=mem_logs/small_mt_2_log_${i}.txt ../fm 0 50000
-    OMP_NUM_THREADS=2 command time -v --output=mem_logs/medium_mt_2_log_${i}.txt ../fm 0 200000
-    OMP_NUM_THREADS=2 command time -v --output=mem_logs/large_mt_2_log_${i}.txt ../fm 0 350000
+    OMP_NUM_THREADS=2 command time -v --output=mem_logs/small_mt_2_log_${i}.txt ./fm 0 50000
+    OMP_NUM_THREADS=2 command time -v --output=mem_logs/medium_mt_2_log_${i}.txt ./fm 0 200000
+    OMP_NUM_THREADS=2 command time -v --output=mem_logs/large_mt_2_log_${i}.txt ./fm 0 350000
 
     echo "Running OpenMP version with 4 threads"
-    OMP_NUM_THREADS=4 command time -v --output=mem_logs/small_mt_4_log_${i}.txt ../fm 0 50000
-    OMP_NUM_THREADS=4 command time -v --output=mem_logs/medium_mt_4_log_${i}.txt ../fm 0 200000
-    OMP_NUM_THREADS=4 command time -v --output=mem_logs/large_mt_4_log_${i}.txt ../fm 0 350000
+    OMP_NUM_THREADS=4 command time -v --output=mem_logs/small_mt_4_log_${i}.txt ./fm 0 50000
+    OMP_NUM_THREADS=4 command time -v --output=mem_logs/medium_mt_4_log_${i}.txt ./fm 0 200000
+    OMP_NUM_THREADS=4 command time -v --output=mem_logs/large_mt_4_log_${i}.txt ./fm 0 350000
 
     echo "Running OpenMP version with 8 threads"
-    OMP_NUM_THREADS=8 command time -v --output=mem_logs/small_mt_8_log_${i}.txt ../fm 0 50000
-    OMP_NUM_THREADS=8 command time -v --output=mem_logs/medium_mt_8_log_${i}.txt ../fm 0 200000
-    OMP_NUM_THREADS=8 command time -v --output=mem_logs/large_mt_8_log_${i}.txt ../fm 0 350000
+    OMP_NUM_THREADS=8 command time -v --output=mem_logs/small_mt_8_log_${i}.txt ./fm 0 50000
+    OMP_NUM_THREADS=8 command time -v --output=mem_logs/medium_mt_8_log_${i}.txt ./fm 0 200000
+    OMP_NUM_THREADS=8 command time -v --output=mem_logs/large_mt_8_log_${i}.txt ./fm 0 350000
 
     echo "Running OpenMP version with 16 threads"
-    OMP_NUM_THREADS=16 command time -v --output=mem_logs/small_mt_16_log_${i}.txt ../fm 0 50000
-    OMP_NUM_THREADS=16 command time -v --output=mem_logs/medium_mt_16_log_${i}.txt ../fm 0 200000
-    OMP_NUM_THREADS=16 command time -v --output=mem_logs/large_mt_16_log_${i}.txt ../fm 0 350000
+    OMP_NUM_THREADS=16 command time -v --output=mem_logs/small_mt_16_log_${i}.txt ./fm 0 50000
+    OMP_NUM_THREADS=16 command time -v --output=mem_logs/medium_mt_16_log_${i}.txt ./fm 0 200000
+    OMP_NUM_THREADS=16 command time -v --output=mem_logs/large_mt_16_log_${i}.txt ./fm 0 350000
 done;
+end_time=$(date +%s);
+elapsed=$(( end_time - start_time ));
+eval "echo Elapsed time: $(date -ud "@$elapsed" +'$((%s/3600/24)) days %H hr %M min %S sec')";

@@ -1,3 +1,8 @@
+start_time=$(date +%s);
+echo "Compiling...";
+gcc ../brute_force_password_cracking_seq_time.c -lssl -lcrypto -o bfst &&
+gcc ../brute_force_password_cracking_time.c -lssl -lcrypto -o bft -fopenmp &&
+
 for i in {1..10}; do
     echo "Running sequential version"
     command time -v --output=mem_logs/small_seq_log_${i}.txt ../bfsm be5d75fa67ef370e98b3d3611c318156 
@@ -24,3 +29,6 @@ for i in {1..10}; do
     OMP_NUM_THREADS=16 command time -v --output=mem_logs/medium_mt_16_log_${i}.txt ../bfm 9cbbf96d1973a60adebbb153f64b48f6
     OMP_NUM_THREADS=16 command time -v --output=mem_logs/large_mt_16_log_${i}.txt ../bfm 34799a12a6ef24ef95a0f3179ac3c78d
 done;
+end_time=$(date +%s);
+elapsed=$(( end_time - start_time ));
+eval "echo Elapsed time: $(date -ud "@$elapsed" +'$((%s/3600/24)) days %H hr %M min %S sec')";

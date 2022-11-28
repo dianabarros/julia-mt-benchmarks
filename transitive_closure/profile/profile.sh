@@ -1,3 +1,8 @@
+start_time=$(date +%s);
+echo "Compiling...";
+gcc ../transitive_closure_seq.c -o tcsm &&
+gcc ../transitive_closure.c -o tcm -fopenmp &&
+
 for i in {1..10}; do
     echo "Running sequential version"
     command time -v --output=mem_logs/small_seq_log_${i}.txt ../tcsm < ../1280_nodes.in
@@ -24,3 +29,6 @@ for i in {1..10}; do
     OMP_NUM_THREADS=16 command time -v --output=mem_logs/medium_mt_16_log_${i}.txt ../tcm < ../2560_nodes.in
     OMP_NUM_THREADS=16 command time -v --output=mem_logs/large_mt_16_log_${i}.txt ../tcm < ../transitive_closure.in
 done;
+end_time=$(date +%s);
+elapsed=$(( end_time - start_time ));
+eval "echo Elapsed time: $(date -ud "@$elapsed" +'$((%s/3600/24)) days %H hr %M min %S sec')";
