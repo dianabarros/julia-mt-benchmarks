@@ -1,7 +1,7 @@
 start_time=$(date +%s);
 echo "Compiling...";
-gcc ../brute_force_password_cracking_seq_time.c -lssl -lcrypto -o bfst &&
-gcc ../brute_force_password_cracking_time.c -lssl -lcrypto -o bft -fopenmp &&
+gcc ../brute_force_password_cracking_seq.c -lssl -lcrypto -o bfsm &&
+gcc ../brute_force_password_cracking.c -lssl -lcrypto -o bfm -fopenmp &&
 
 for i in {1..10}; do
     echo "Running sequential version"
