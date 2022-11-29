@@ -40,7 +40,7 @@ int main(int argc, char **argv) {
 	int c, v, b, c1, v1, b1, c2, v2, b2, c3, v3;
 	int ok = 0, r, idx = 0;
 	int isOver2 = 0;
-	char hash1_str[2*MD5_DIGEST_LENGTH+1];
+	char *hash1_str; //[2*MD5_DIGEST_LENGTH+1];
 	double end;
 	double start;
 	
@@ -62,12 +62,8 @@ int main(int argc, char **argv) {
 	
 	// gettimeofday(&tstart, NULL);
 	
-	if (strlen(argv[1]) < sizeof(hash1_str)) {
-		strcpy(hash1_str, argv[1]);
-	} else {
-		printf("aaaaaa");
-		exit(1);
-	}
+	hash1_str = argv[1];
+
 	strHex_to_byte(hash1_str, hash1);
 	memset(hash2, 0, MD5_DIGEST_LENGTH);
 	// Generate all possible passwords of different sizes.
