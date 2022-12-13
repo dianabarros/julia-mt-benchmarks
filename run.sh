@@ -1,4 +1,5 @@
 start_time=$(date +%s);
+julia instantiate.jl;
 for i in 2 4 8 16 32 64; do
     echo "Running Mutual Friendly Numbers with $i threads.";
     julia -t $i mutually_friendly_numbers/benchmarks.jl --timed;
