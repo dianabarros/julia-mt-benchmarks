@@ -1,7 +1,7 @@
 using Statistics, DataFrames
 
 run_number = "run5"
-app = "mutually_friendly"
+app = "transitive_closure"
 language = "c"
 
 loop_time = Dict()
@@ -35,13 +35,7 @@ for instance in instances
     loop_time[instance] = load_logs(run_number, app, language, logs, instance)
 end
 
-# FULL TIME
-full_time = Dict()
-logs = "full_time_logs"
-for instance in instances
-    global full_time
-    full_time[instance] = load_logs(run_number, app, language, logs, instance)
-end
+# FULL TIME == LOOP TIME
 
 # MEM LOGS
 logs="mem_logs"
@@ -115,21 +109,6 @@ for size in keys(loop_time)
             time=loop_time[size][n_threads]
             )
         loop_time_df = vcat(loop_time_df, df)
-    end
-end
-
-full_time_df = DataFrame(func=String[], input=String[], n_threads=Int64[], time=Float64[])
-for size in keys(full_time)
-    global full_time_df
-    for n_threads in keys(full_time[size])
-        repetitions = length(full_time[size][n_threads])
-        df = DataFrame(
-            func=repeat([app], repetitions),
-            input=repeat([size], repetitions),
-            n_threads=repeat([n_threads], repetitions),
-            time=full_time[size][n_threads]
-            )
-        full_time_df = vcat(full_time_df, df)
     end
 end
 

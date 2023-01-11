@@ -1,7 +1,7 @@
 using Statistics, DataFrames
 
 run_number = "run5"
-app = "mutually_friendly"
+app = "password_cracking"
 language = "c"
 
 loop_time = Dict()
