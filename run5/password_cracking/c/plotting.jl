@@ -149,3 +149,9 @@ for size in keys(mem_logs)
         mem_logs_df = vcat(mem_logs_df, df)
     end
 end
+
+# TODO: loop time speedup
+
+# TODO: full time speedup
+
+# TODO: mem analysis

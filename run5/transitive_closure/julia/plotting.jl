@@ -44,6 +44,7 @@ floop_speedup_plot |> save("$(run)/$(app)/julia/floop_speedup_plot.png")
 mt_df = vcat(floop_df[floop_df.executor .== "DepthFirstEx",:], df[df.func .== "debug_$(func)_threads!", :])
 mt_seq_df = innerjoin(mt_df, seq_time_df, on=[:input, :n_threads], renamecols= "_mt" => "_seq")
 mt_seq_df = hcat(mt_seq_df, DataFrame(speedup=Vector{Union{Missing, Float64}}(missing,size(mt_seq_df,1))))
+CSV.write("mt_seq_df.csv", mt_seq_df)
 
 mt_speedup = select(mt_seq_df, :, [:total_time_mean_mt, :total_time_mean_seq] => ((total_time_mean_mt, total_time_mean_seq) -> (total_time_mean_seq./total_time_mean_mt)) => :speedup)
 
