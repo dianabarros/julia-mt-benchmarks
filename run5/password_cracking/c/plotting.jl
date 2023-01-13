@@ -1,4 +1,4 @@
-using Statistics, DataFrames
+using Statistics, DataFrames, CSV
 
 run_number = "run5"
 app = "password_cracking"
@@ -150,7 +150,17 @@ for size in keys(mem_logs)
     end
 end
 
-# TODO: loop time speedup
+loop_time_gb = groupby(loop_time_df, [:func, :input, :n_threads])
+loop_time_df = combine(loop_time_gb, 
+    :time =>  mean, :time => std)
+CSV.write("$(run_number)/$(app)/$(language)/loop_time_df.csv", loop_time_df)
+
+seq_loop_time_df = loop_time_df[loop_time_df.n_threads .== 1, [:func, :input, :time_mean]]
+openmp_loop_time_df = loop_time_df[loop_time_df.n_threads .!= 1, :]
+openmp_seq_df = innerjoin(openmp_loop_time_df, seq_loop_time_df, on=:input, renamecols= "_openmp" => "_seq")
+openmp_seq_df = hcat(openmp_seq_df, DataFrame(speedup=Vector{Union{Missing, Float64}}(missing,size(openmp_seq_df,1))))
+speedup_df = select(openmp_seq_df, :, [:time_mean_openmp, :time_mean_seq] => ((time_mean_openmp, time_mean_seq) -> (time_mean_seq./time_mean_openmp)) => :speedup)
+CSV.write("$(run_number)/$(app)/$(language)/speedup_df.csv", speedup_df)
 
 # TODO: full time speedup
 

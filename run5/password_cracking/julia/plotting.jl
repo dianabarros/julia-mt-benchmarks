@@ -13,7 +13,9 @@ while i <= 16
     i = i*2
 end
 
-df.input= length.(df.input)
+df.input = length.(df.input)
+input_sizes = Dict(4 => "small", 5 => "medium", 6 => "large")
+df[!,"input"] = [input_sizes[val] for val in df[!,"input"]]
 
 gb = groupby(df, [:func, :executor, :basesize, :input, :n_threads])
 df = combine(gb, 
@@ -45,9 +47,9 @@ floop_speedup_plot |> save("$(run)/$(app)/julia/floop_speedup_plot.png")
 mt_df = vcat(floop_df[floop_df.executor .== "DepthFirstEx",:], df[df.func .== "debug_$(func)_threads", :])
 mt_seq_df = innerjoin(mt_df, seq_time_df, on=[:input, :n_threads], renamecols= "_mt" => "_seq")
 mt_seq_df = hcat(mt_seq_df, DataFrame(speedup=Vector{Union{Missing, Float64}}(missing,size(mt_seq_df,1))))
-CSV.write("mt_seq_df.csv", mt_seq_df)
 
 mt_speedup = select(mt_seq_df, :, [:main_loop_time_mean_mt, :main_loop_time_mean_seq] => ((main_loop_time_mean_mt, main_loop_time_mean_seq) -> (main_loop_time_mean_seq./main_loop_time_mean_mt)) => :speedup)
+CSV.write("$(run)/$(app)/julia/mt_seq_df.csv", mt_speedup)
 
 # Comparing native and FLoops with DepthFirstEx
 mt_speedup_plot = mt_speedup |>
@@ -77,6 +79,7 @@ end
 mem_df.input = length.(mem_df.input)
 
 mem_df = mem_df[mem_df.input .== 6, :]
+mem_df[!, "input"] = repeat(["large"], length(mem_df[!, "input"]))
 
 mem_df[:, :memory_kb] = mem_df[:, :memory] ./ 1e3
 
