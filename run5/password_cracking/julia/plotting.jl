@@ -77,9 +77,10 @@ while i <= 16
 end
 
 mem_df.input = length.(mem_df.input)
+input_sizes = Dict(4 => "small", 5 => "medium", 6 => "large")
+mem_df[!,"input"] = [input_sizes[val] for val in mem_df[!,"input"]]
 
-mem_df = mem_df[mem_df.input .== 6, :]
-mem_df[!, "input"] = repeat(["large"], length(mem_df[!, "input"]))
+# mem_df = mem_df[mem_df.input .== "large", :]
 
 mem_df[:, :memory_kb] = mem_df[:, :memory] ./ 1e3
 
@@ -89,23 +90,12 @@ seq_mem_df = mem_df[mem_df.func .==  "$(func)", :]
 threads_df = mem_df[mem_df.func .==  "$(func)_threads", :]
 floop_mem_df = mem_df[mem_df.func .==  "$(func)_floop", :]
 
-# Comparing executors from FLoops
-floop_mem_plot = floop_mem_df |>
-    @vlplot(
-        mark={:bar, clip=true},
-        x=:executor,
-        y={:memory_gb},
-        color=:executor,
-        column=:n_threads)
-
-floop_mem_plot |> save("$(run)/$(app)/julia/floop_mem_plot.png")
-
 # NOTE: DepthFirstEx seems to have better memory usage
 #      The number of threads that showed more memory usage was 4
 
 final_mem_df = vcat(threads_df, floop_mem_df[floop_mem_df.executor .== "DepthFirstEx", :])
 final_mem_df = vcat(final_mem_df, seq_mem_df)
-final_mem_df = final_mem_df[final_mem_df.n_threads .== 4, :]
+# final_mem_df = final_mem_df[final_mem_df.n_threads .== 4, :]
 
 mt_mem_plot = final_mem_df |>
     @vlplot(
@@ -113,9 +103,24 @@ mt_mem_plot = final_mem_df |>
         x=:func,
         y={:memory_gb},
         color=:func,
-        column=:n_threads)
+        column=:n_threads,
+        row=:input
+    )
 
 mt_mem_plot |> save("$(run)/$(app)/julia/mt_mem_plot.png")
+
+# Comparing executors from FLoops
+floop_mem_plot = floop_mem_df |>
+    @vlplot(
+        mark={:bar, clip=true},
+        x=:executor,
+        y={:memory_gb},
+        color=:executor,
+        column=:n_threads,
+        row=:input
+    )
+
+floop_mem_plot |> save("$(run)/$(app)/julia/floop_mem_plot.png")
 
 # NOTE: multithreading consumes more memory than sequential
 

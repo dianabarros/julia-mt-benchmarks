@@ -70,7 +70,7 @@ while i <= 16
     i = i*2
 end
 
-mem_df = mem_df[mem_df.input .== "large", :]
+# mem_df = mem_df[mem_df.input .== "large", :]
 
 mem_df[:, :memory_kb] = mem_df[:, :memory] ./ 1e3
 
@@ -79,6 +79,25 @@ mem_df[:, :memory_gb] = mem_df[:, :memory] ./ 1e9
 seq_mem_df = mem_df[mem_df.func .==  "benchmark_$(func)", :] # NOTE: No bytes allocated
 threads_df = mem_df[mem_df.func .==  "benchmark_$(func)_threads", :]
 floop_mem_df = mem_df[mem_df.func .==  "benchmark_$(func)_floop", :]
+
+# NOTE: ThreadedEx had better memory usage, DepthFirstEx is similar
+#      Number of threads that seems to use more memory is 16
+
+final_mem_df = vcat(threads_df, floop_mem_df[floop_mem_df.executor .== "ThreadedEx", :])
+final_mem_df = vcat(final_mem_df, seq_mem_df)
+# final_mem_df = final_mem_df[final_mem_df.n_threads .== 16, :]
+
+mt_mem_plot = final_mem_df |>
+    @vlplot(
+        mark={:bar, clip=true},
+        x=:func,
+        y={:memory_kb},
+        color=:func,
+        column=:n_threads,
+        row=:input    
+    )
+
+mt_mem_plot |> save("$(run)/$(app)/julia/mt_mem_plot.png")
 
 # NOTE: NondeterministicEx had worse performance
 #      Removing it to be able to compare the other executors
@@ -89,28 +108,13 @@ floop_mem_plot = floop_mem_df |>
     @vlplot(
         mark={:bar, clip=true},
         x=:executor,
-        y={:memory_gb},
+        y={:memory_kb},
         color=:executor,
-        column=:n_threads)
+        column=:n_threads,
+        row=:input
+    )
 
 floop_mem_plot |> save("$(run)/$(app)/julia/floop_mem_plot.png")
-
-# NOTE: ThreadedEx had better memory usage, DepthFirstEx is similar
-#      Number of threads that seems to use more memory is 16
-
-final_mem_df = vcat(threads_df, floop_mem_df[floop_mem_df.executor .== "ThreadedEx", :])
-final_mem_df = vcat(final_mem_df, seq_mem_df)
-final_mem_df = final_mem_df[final_mem_df.n_threads .== 16, :]
-
-mt_mem_plot = final_mem_df |>
-    @vlplot(
-        mark={:bar, clip=true},
-        x=:func,
-        y={:memory_kb},
-        color=:func,
-        column=:n_threads)
-
-mt_mem_plot |> save("$(run)/$(app)/julia/mt_mem_plot.png")
 
 # TODO: check if needed to remove sequential for not allocating bytes
 
