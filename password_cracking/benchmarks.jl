@@ -165,7 +165,16 @@ if args["timed"]
                     main_loop_bytes=Int64[], main_loop_time=Float64[], total_time=Float64[], loop_1_time=Float64[], 
                     loop_2_time=Float64[], loop_3_time=Float64[], loop_4_time=Float64[], loop_5_time=Float64[], 
                     loop_6_time=Float64[], loop_7_time=Float64[], loop_8_time=Float64[])
-    df_file_name = string("pw_cracking_results_",nthreads(),".csv")
+    df_file_name = string("pw_cracking_results_t",nthreads(),"_1.csv")
+    if isfile(string("pw_cracking_results_",nthreads(),".csv"))
+        df_file_name = string("pw_cracking_results_t",nthreads(),"_2.csv")
+    end
+    if isfile(df_file_name)
+        df_file_name = df_file_name[1:findfirst(".csv", df_file_name).start-1]
+        file_num = parse(Int64, split(df_file_name, "_")[end])
+        file_num += 1
+        df_file_name = "pw_cracking_results_t$(nthreads())_$(file_num).csv"
+    end
 
     # task_distribution = []
     # task_times = []
@@ -212,7 +221,16 @@ end
 if args["benchmarktools"]
     bench_df = DataFrame(func=String[], input=String[], executor=Vector{Union{String,Missing}}(), 
                     basesize=Vector{Union{Int64,Missing}}(), n_threads=Int64[], memory=Int64[])
-    bench_df_file_name = string("pw_cracking_memory_",nthreads(),".csv")
+    bench_df_file_name = string("pw_cracking_memory_t",nthreads(),"_1.csv")
+    if isfile(string("pw_cracking_memory_",nthreads(),".csv"))
+        bench_df_file_name = string("pw_cracking_memory_t",nthreads(),"_2.csv")
+    end
+    if isfile(bench_df_file_name)
+        bench_df_file_name = bench_df_file_name[1:findfirst(".csv", bench_df_file_name).start-1]
+        file_num = parse(Int64, split(bench_df_file_name, "_")[end])
+        file_num += 1
+        bench_df_file_name = "pw_cracking_memory_t$(nthreads())_$(file_num).csv"
+    end
 
     for run in bench_runs
         println("BenchmarkTools run = ", run) 

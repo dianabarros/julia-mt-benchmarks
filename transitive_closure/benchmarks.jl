@@ -112,7 +112,16 @@ end
 if args["timed"]
     df = DataFrame(func=String[], input=String[], executor=Vector{Union{String,Missing}}(), n_threads=Int64[], 
     basesize=Vector{Union{Int64,Missing}}(),total_bytes=Int64[], total_time=Float64[])
-    df_file_name = string("transitive_closure_results_",nthreads(),".csv")
+    df_file_name = string("transitive_closure_results_t",nthreads(),"_1.csv")
+    if isfile(string("transitive_closure_results_",nthreads(),".csv"))
+        df_file_name = string("transitive_closure_results_t",nthreads(),"_2.csv")
+    end
+    if isfile(df_file_name)
+        df_file_name = df_file_name[1:findfirst(".csv", df_file_name).start-1]
+        file_num = parse(Int64, split(df_file_name, "_")[end])
+        file_num += 1
+        df_file_name = "transitive_closure_results_t$(nthreads())_$(file_num).csv"
+    end
 
     println("Running...")
     # task_distribution = []
@@ -150,7 +159,16 @@ end
 
 if args["benchmarktools"]
     bench_df = DataFrame(func=String[], input=String[], executor=Vector{Union{String,Missing}}(), basesize=Vector{Union{Int64,Missing}}(), n_threads=Int64[], memory=Int64[])
-    bench_df_file_name = string("transitive_closure_memory_",nthreads(),".csv")
+    bench_df_file_name = string("transitive_closure_memory_t",nthreads(),"_1.csv")
+    if isfile(string("transitive_closure_memory_",nthreads(),".csv"))
+        bench_df_file_name = string("transitive_closure_memory_t",nthreads(),"_2.csv")
+    end
+    if isfile(bench_df_file_name)
+        bench_df_file_name = bench_df_file_name[1:findfirst(".csv", bench_df_file_name).start-1]
+        file_num = parse(Int64, split(bench_df_file_name, "_")[end])
+        file_num += 1
+        bench_df_file_name = "transitive_closure_memory_t$(nthreads())_$(file_num).csv"
+    end
 
     for run in bench_runs
         println("BenchmarkTools run = ", 
