@@ -74,7 +74,7 @@ end
 
 mem_df[:, :memory_kb] = mem_df[:, :memory] ./ 1e3
 
-mem_df[:, :memory_gb] = mem_df[:, :memory] ./ 1e9
+# mem_df[:, :memory_gb] = mem_df[:, :memory] ./ 1e9
 
 seq_mem_df = mem_df[mem_df.func .==  "benchmark_$(func)", :] # NOTE: No bytes allocated
 threads_df = mem_df[mem_df.func .==  "benchmark_$(func)_threads", :]

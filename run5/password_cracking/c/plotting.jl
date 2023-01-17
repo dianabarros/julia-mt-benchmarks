@@ -163,8 +163,9 @@ speedup_df = select(openmp_seq_df, :, [:time_mean_openmp, :time_mean_seq] => ((t
 CSV.write("$(run_number)/$(app)/$(language)/speedup_df.csv", speedup_df)
 
 # memory analysis using max_rss
+mem_metric = "max_rss"
 mem_gb = groupby(mem_logs_df, [:func, :input, :n_threads])
-mem_df = combine(mem_gb, :max_rss =>  mean, :max_rss => std)
+mem_df = combine(mem_gb, mem_metric =>  mean, mem_metric=> std)
 CSV.write("$(run_number)/$(app)/$(language)/mem_df.csv", mem_df)
 
 # TODO: full time speedup

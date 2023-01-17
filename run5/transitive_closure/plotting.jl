@@ -60,3 +60,54 @@ speedup_plot |> save("$(run_)/$(app)/speedup_plot.png")
 
 # NOTE: C had better speedup for every input size and with any number of threads
 # TODO: evaluate the scheduling in C
+
+
+# MEMORY COMPARISON
+c_mem_metric = "max_rss" # TODO: check metric
+c_mem_df = DataFrame(CSV.File("$(run_)/$(app)/c/mem_df.csv"))
+c_mem_df = rename(c_mem_df, Dict("$(c_mem_metric)_mean" => :memory_kb))
+c_mem_df[:,"func"] = [v == 1 ? "C - Sequential" : "C - OpenMP" for v in c_mem_df[:,"n_threads"]]
+c_seq_mem_df = c_mem_df[c_mem_df.n_threads .== 1, :]
+c_openmp_mem_df = c_mem_df[c_mem_df.n_threads .!= 1, :]
+c_mem_df = vcat(
+    c_openmp_mem_df[:, [:func, :input, :n_threads, :memory_kb]],
+    DataFrame(func=c_seq_mem_df.func, input=c_seq_mem_df.input, n_threads=repeat([2],length(c_seq_mem_df.n_threads)), memory_kb=c_seq_mem_df.memory_kb),
+    DataFrame(func=c_seq_mem_df.func, input=c_seq_mem_df.input, n_threads=repeat([4],length(c_seq_mem_df.n_threads)), memory_kb=c_seq_mem_df.memory_kb),
+    DataFrame(func=c_seq_mem_df.func, input=c_seq_mem_df.input, n_threads=repeat([8],length(c_seq_mem_df.n_threads)), memory_kb=c_seq_mem_df.memory_kb),
+    DataFrame(func=c_seq_mem_df.func, input=c_seq_mem_df.input, n_threads=repeat([16],length(c_seq_mem_df.n_threads)), memory_kb=c_seq_mem_df.memory_kb)
+)
+
+julia_executor = "DepthFirstEx"
+julia_mem_df = DataFrame(CSV.File("/Users/diana.barros/Documents/julia-mt-benchmarks/$(run_)/$(app)/julia/$(app)_memory_2.csv"))
+i = 4
+while i <= 16
+    temp = DataFrame(CSV.File("/Users/diana.barros/Documents/julia-mt-benchmarks/$(run_)/$(app)/julia/$(app)_memory_$i.csv"))
+    julia_mem_df = vcat(julia_mem_df,temp)
+    i = i*2
+end
+julia_mem_df[:, :memory_kb] = julia_mem_df[:, :memory] ./ 1e3
+
+seq_mem_df = julia_mem_df[julia_mem_df.func .==  "warshall!", :]
+seq_mem_df.func .= "Julia - Sequential"
+threads_mem_df = julia_mem_df[julia_mem_df.func .==  "warshall_threads!", :]
+threads_mem_df.func .= "Julia - @threads"
+floop_mem_df = julia_mem_df[julia_mem_df.func .==  "warshall_floops!", :]
+floop_mem_df.func .= "Julia - Floops ($(julia_executor))"
+
+julia_mem_df = vcat(threads_mem_df, floop_mem_df[floop_mem_df.executor .== julia_executor, :])
+julia_mem_df = vcat(julia_mem_df, seq_mem_df)
+
+final_mem_df = vcat(c_mem_df[:, [:func, :input, :n_threads, :memory_kb]], julia_mem_df[:, [:func, :input, :n_threads, :memory_kb]])
+
+# TODO: change for log scale?
+mem_plot = final_mem_df |>
+    @vlplot(
+        mark={:bar, clip=true},
+        x=:func,
+        y={:memory_kb},
+        color=:func,
+        column=:n_threads,
+        row=:input    
+    )
+
+mem_plot |> save("$(run_)/$(app)/mem_plot.png")
