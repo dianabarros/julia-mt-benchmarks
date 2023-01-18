@@ -49,11 +49,11 @@ speedup_df = vcat(
 speedup_plot = speedup_df |>
     @vlplot(
         mark={:bar, clip=true},
-        x=:func,
-        y={:speedup},
-        color=:func,
-        column="n_threads:n",
-        row=:input
+        x={:func, axis={title=nothing}},
+        y={:speedup, axis={title="Speedup"}},
+        color={:func, axis={title="Parallel Implementation"}},
+        column={"n_threads:n", axis={title="Number of Threads"}},
+        row={:input, axis={title="Input Size"}}
     )
 
 speedup_plot |> save("$(run_)/$(app)/speedup_plot.png")
@@ -103,11 +103,11 @@ final_mem_df = vcat(c_mem_df[:, [:func, :input, :n_threads, :memory_kb]], julia_
 mem_plot = final_mem_df |>
     @vlplot(
         mark={:bar, clip=true},
-        x=:func,
-        y={:memory_kb},
-        color=:func,
-        column=:n_threads,
-        row=:input    
+        x={:func, axis={title=nothing}},
+        y={:memory_kb, axis={title="Memory Usage (Kb)"}},
+        color={:func, axis={title="Parallel Implementation"}},
+        column={:n_threads, axis={title="Number of Threads"}},
+        row={:input, axis={title="Input Size"}}    
     )
 
 mem_plot |> save("$(run_)/$(app)/mem_plot.png")

@@ -30,20 +30,20 @@ speedup_df = select(parallel_seq_df, :, [:main_loop_time_mean_parallel, :main_lo
 speedup_plot = speedup_df |>
     @vlplot(
         mark={:bar, clip=true},
-        x="n_threads_parallel:n",
-        y={:speedup},
-        color=:func_parallel,
-        column=:func_parallel,
-        row=:input
+        x={"n_threads_parallel:n", axis={title="Number of threads"}},
+        y={:speedup, axis={title="Speedup"}},
+        color={:func_parallel, axis={title="Macros"}},
+        column={:func_parallel, axis={title=nothing}},
+        row={:input, axis={title="Input size"}}
     )
 speedup_plot |> save("$(run_)/$(app)/speedup_plot.png")
 
 imbalance_plot = parallel_df |>
     @vlplot(
         mark={:line, clip=true},
-        x="n_threads:q",
-        y={:imbalance_mean},
-        color=:func,
-        column=:input
+        x={"n_threads:q", axis={title="Number of threads"}},
+        y={:imbalance_mean, axis={title="Imbalance (λ)"}},
+        color={:func, axis={title="Macro"}},
+        column={:input, axis={title="Input size"}}
         )
 imbalance_plot |> save("$(run_)/$(app)/imbalance_plot.png")

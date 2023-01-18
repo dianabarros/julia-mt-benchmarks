@@ -31,10 +31,10 @@ floop_speedup = select(floop_seq_df, :, [:main_loop_time_mean_floop, :main_loop_
 floop_speedup_plot = floop_speedup |>
     @vlplot(
         mark={:line, clip=true},
-        x="n_threads:q",
-        y={:speedup},
-        color=:executor_floop,
-        column=:input)
+        x={"n_threads:q", axis={title="Number of Threads"}},
+        y={:speedup, axis={title="Speedup"}},
+        color={:executor_floop, axis={title="Executor"}},
+        column={:input, axis={title="Input size"}})
         # width=300, height=200)
 
 floop_speedup_plot |> save("$(run)/$(app)/julia/floop_speedup_plot.png")
@@ -52,10 +52,10 @@ CSV.write("$(run)/$(app)/julia/mt_seq_df.csv", mt_speedup)
 mt_speedup_plot = mt_speedup |>
     @vlplot(
         mark={:line, clip=true},
-        x="n_threads:q",
-        y={:speedup},
-        color=:func_mt,
-        column=:input)
+        x={"n_threads:q", axis={title="Number of Threads"}},
+        y={:speedup, axis={title="Speedup"}},
+        color={:func_mt, axis={title="Parallel Implementation"}},
+        column={:input, axis={title="Input size"}})
         # width=300, height=200)
 
 mt_speedup_plot |> save("$(run)/$(app)/julia/mt_speedup_plot.png")
@@ -90,11 +90,11 @@ final_mem_df = vcat(final_mem_df, seq_mem_df)
 mt_mem_plot = final_mem_df |>
     @vlplot(
         mark={:bar, clip=true},
-        x=:func,
-        y={:memory_kb},
-        color=:func,
-        column=:n_threads,
-        row=:input    
+        x={:func, axis={title=nothing}},
+        y={:memory_kb, axis={title="Memory Usage (Kb)"}},
+        color={:func, axis={title="Parallel Implementation"}},
+        column={:n_threads, axis={title="Number of Threads"}},
+        row={:input, axis={title="Input size"}}    
     )
 
 mt_mem_plot |> save("$(run)/$(app)/julia/mt_mem_plot.png")
@@ -107,11 +107,11 @@ floop_mem_df = floop_mem_df[floop_mem_df.executor .!= "NondeterministicEx", :]
 floop_mem_plot = floop_mem_df |>
     @vlplot(
         mark={:bar, clip=true},
-        x=:executor,
-        y={:memory_kb},
-        color=:executor,
-        column=:n_threads,
-        row=:input
+        x={:executor, axis={title=nothing}},
+        y={:memory_kb, axis={title="Memory Usage (Kb)"}},
+        color={:executor, axis={title="Executor"}},
+        column={:n_threads, axis={title="Number of Threads"}},
+        row={:input, axis={title="Input size"}}
     )
 
 floop_mem_plot |> save("$(run)/$(app)/julia/floop_mem_plot.png")

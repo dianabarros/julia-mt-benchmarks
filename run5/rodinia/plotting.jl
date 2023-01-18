@@ -54,86 +54,97 @@ speedup_df = select(parallel_seq_df, :, [:main_loop_time_mean_parallel, :main_lo
 
 bfs_speedup_plot = speedup_df[speedup_df.bench_name .== "bfs",:] |>
     @vlplot(
+        title={text="BFS Speedup",anchor=:middle},
         mark={:line, clip=true},
-        x="n_threads:q",
-        y={:speedup},
-        color=:func_parallel,
-        row=:input
+        x={"n_threads:q", axis={title="Number of threads"}},
+        y={:speedup, axis={title="Speedup"}},
+        color={:func_parallel, axis={title="Macros"}},
+        row={:input, axis={title="Input size"}}
     )
 
 bfs_time_plot = speedup_df[speedup_df.bench_name .== "bfs",:] |>
     @vlplot(
+        title={text="BFS Execution Time",anchor=:middle},
         mark={:bar, clip=true},
-        x="func_parallel:n",
-        y={:main_loop_time_mean_parallel},
-        color=:func_parallel,
-        column=:input,
-        row=:n_threads
+        x={"func_parallel:n", axis={title="Macro"}},
+        y={:main_loop_time_mean_parallel, axis={title="Execution Time (s)"}},
+        color={:func_parallel, axis={title="Macro"}},
+        column={:input, axis={title="Input Size"}},
+        row={:n_threads, axis={title="Number of threads"}}
     )
 
 lud_speedup_plot = speedup_df[speedup_df.bench_name .== "lud",:] |>
     @vlplot(
+        title={text="LUD Speedup",anchor=:middle},
         mark={:line, clip=true},
-        x="n_threads:q",
-        y={:speedup},
-        color=:func_parallel,
-        row=:input
+        x={"n_threads:q", axis={title="Number of threads"}},
+        y={:speedup, axis={title="Speedup"}},
+        color={:func_parallel, axis={title="Macros"}},
+        row={:input, axis={title="Input size"}}
     )
 
 lud_time_plot = speedup_df[speedup_df.bench_name .== "lud",:] |>
     @vlplot(
+        title={text="LUD Execution Time",anchor=:middle},
         mark={:bar, clip=true},
-        x="func_parallel:n",
-        y={:main_loop_time_mean_parallel},
-        color=:func_parallel,
-        column=:input,
-        row=:n_threads
+        x={"func_parallel:n", axis={title="Macro"}},
+        y={:main_loop_time_mean_parallel, axis={title="Execution Time (s)"}},
+        color={:func_parallel, axis={title="Macro"}},
+        column={:input, axis={title="Input Size"}},
+        row={:n_threads, axis={title="Number of threads"}}
     )
 
 srad_speedup_plot = speedup_df[speedup_df.bench_name .== "srad",:] |>
     @vlplot(
+        title={text="SRAD_V2 Speedup",anchor=:middle},
         mark={:line, clip=true},
-        x="n_threads:q",
-        y={:speedup},
-        color=:func_parallel,
-        row=:input
+        x={"n_threads:q", axis={title="Number of threads"}},
+        y={:speedup, axis={title="Speedup"}},
+        color={:func_parallel, axis={title="Macros"}},
+        row={:input, axis={title="Input size"}}
     )
 
 srad_time_plot = speedup_df[speedup_df.bench_name .== "srad",:] |>
     @vlplot(
+        title={text="SRAD_V2 Execution Time",anchor=:middle},
         mark={:bar, clip=true},
-        x="func_parallel:n",
-        y={:main_loop_time_mean_parallel},
-        color=:func_parallel,
-        column=:input,
-        row=:n_threads
+        x={"func_parallel:n", axis={title="Macro"}},
+        y={:main_loop_time_mean_parallel, axis={title="Execution Time (s)"}},
+        color={:func_parallel, axis={title="Macro"}},
+        column={:input, axis={title="Input Size"}},
+        row={:n_threads, axis={title="Number of threads"}}
     )
-
 
 bfs_imbalance_plot = speedup_df[speedup_df.bench_name .== "bfs",:] |>
     @vlplot(
+        title={text="BFS Imbalance",anchor=:middle},
         mark={:bar, clip=true},
-        x="func_parallel:n",
-        y={:imbalance_mean_parallel},
-        color=:func_parallel,
-        column=:input,
-        row=:n_threads
+        x={"func_parallel:n", axis={title="Macro"}},
+        y={:imbalance_mean_parallel, axis={title="Imbalance (λ) "}},
+        color={:func_parallel, axis={title="Macro"}},
+        column={:input, axis={title="Input size"}},
+        row={:n_threads, axis={title="Number of Threads"}}
     )
+    
 
 lud_imbalance_plot = speedup_df[speedup_df.bench_name .== "lud",:] |>
     @vlplot(
-        mark={:line, clip=true},
-        x="n_threads:q",
-        y={:imbalance_mean_parallel},
-        color=:func_parallel,
-        column=:input
+        title={text="LUD Imbalance",anchor=:middle},
+        mark={:bar, clip=true},
+        x={"func_parallel:n", axis={title="Macro"}},
+        y={:imbalance_mean_parallel, axis={title="Imbalance (λ) "}},
+        color={:func_parallel, axis={title="Macro"}},
+        column={:input, axis={title="Input size"}},
+        row={:n_threads, axis={title="Number of Threads"}}
     )
 
 srad_imbalance_plot = speedup_df[speedup_df.bench_name .== "srad",:] |>
     @vlplot(
-        mark={:line, clip=true},
-        x="n_threads:q",
-        y={:imbalance_mean_parallel},
-        color=:func_parallel,
-        column=:input
+        title={text="SRAD_V2 Imbalance",anchor=:middle},
+        mark={:bar, clip=true},
+        x={"func_parallel:n", axis={title="Macro"}},
+        y={:imbalance_mean_parallel, axis={title="Imbalance (λ) "}},
+        color={:func_parallel, axis={title="Macro"}},
+        column={:input, axis={title="Input size"}},
+        row={:n_threads, axis={title="Number of Threads"}}
     )
