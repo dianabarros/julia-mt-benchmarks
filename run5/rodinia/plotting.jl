@@ -61,6 +61,7 @@ bfs_speedup_plot = speedup_df[speedup_df.bench_name .== "bfs",:] |>
         color={:func_parallel, axis={title="Macros"}},
         row={:input, axis={title="Input size"}}
     )
+bfs_speedup_plot |> save("$(run_)/$(app)/bfs_speedup_plot.png")
 
 bfs_time_plot = speedup_df[speedup_df.bench_name .== "bfs",:] |>
     @vlplot(
@@ -72,6 +73,7 @@ bfs_time_plot = speedup_df[speedup_df.bench_name .== "bfs",:] |>
         column={:input, axis={title="Input Size"}},
         row={:n_threads, axis={title="Number of threads"}}
     )
+bfs_time_plot |> save("$(run_)/$(app)/bfs_time_plot.png")
 
 lud_speedup_plot = speedup_df[speedup_df.bench_name .== "lud",:] |>
     @vlplot(
@@ -82,6 +84,7 @@ lud_speedup_plot = speedup_df[speedup_df.bench_name .== "lud",:] |>
         color={:func_parallel, axis={title="Macros"}},
         row={:input, axis={title="Input size"}}
     )
+lud_speedup_plot |> save("$(run_)/$(app)/lud_speedup_plot.png")
 
 lud_time_plot = speedup_df[speedup_df.bench_name .== "lud",:] |>
     @vlplot(
@@ -93,6 +96,7 @@ lud_time_plot = speedup_df[speedup_df.bench_name .== "lud",:] |>
         column={:input, axis={title="Input Size"}},
         row={:n_threads, axis={title="Number of threads"}}
     )
+lud_time_plot |> save("$(run_)/$(app)/lud_time_plot.png")
 
 srad_speedup_plot = speedup_df[speedup_df.bench_name .== "srad",:] |>
     @vlplot(
@@ -103,6 +107,7 @@ srad_speedup_plot = speedup_df[speedup_df.bench_name .== "srad",:] |>
         color={:func_parallel, axis={title="Macros"}},
         row={:input, axis={title="Input size"}}
     )
+srad_speedup_plot |> save("$(run_)/$(app)/srad_speedup_plot.png")
 
 srad_time_plot = speedup_df[speedup_df.bench_name .== "srad",:] |>
     @vlplot(
@@ -114,6 +119,7 @@ srad_time_plot = speedup_df[speedup_df.bench_name .== "srad",:] |>
         column={:input, axis={title="Input Size"}},
         row={:n_threads, axis={title="Number of threads"}}
     )
+srad_time_plot |> save("$(run_)/$(app)/srad_time_plot.png")
 
 bfs_imbalance_plot = speedup_df[speedup_df.bench_name .== "bfs",:] |>
     @vlplot(
@@ -125,7 +131,7 @@ bfs_imbalance_plot = speedup_df[speedup_df.bench_name .== "bfs",:] |>
         column={:input, axis={title="Input size"}},
         row={:n_threads, axis={title="Number of Threads"}}
     )
-    
+bfs_imbalance_plot |> save("$(run_)/$(app)/bfs_imbalance_plot.png")    
 
 lud_imbalance_plot = speedup_df[speedup_df.bench_name .== "lud",:] |>
     @vlplot(
@@ -137,6 +143,7 @@ lud_imbalance_plot = speedup_df[speedup_df.bench_name .== "lud",:] |>
         column={:input, axis={title="Input size"}},
         row={:n_threads, axis={title="Number of Threads"}}
     )
+lud_imbalance_plot |> save("$(run_)/$(app)/lud_imbalance_plot.png")
 
 srad_imbalance_plot = speedup_df[speedup_df.bench_name .== "srad",:] |>
     @vlplot(
@@ -148,3 +155,4 @@ srad_imbalance_plot = speedup_df[speedup_df.bench_name .== "srad",:] |>
         column={:input, axis={title="Input size"}},
         row={:n_threads, axis={title="Number of Threads"}}
     )
+srad_imbalance_plot |> save("$(run_)/$(app)/srad_imbalance_plot.png")
