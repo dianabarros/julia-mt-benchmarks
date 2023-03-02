@@ -94,7 +94,7 @@ if !isnothing(args["bench-funcs"])
     funcs = eval(Meta.parse(args["bench-funcs"]))
 end
 
-basesizes = [div(length(letters), nthreads())]
+basesizes = [div(length(letters), nthreads()) > 0 ? div(length(letters), nthreads()) : 1]
 
 executors = [ThreadedEx, WorkStealingEx, DepthFirstEx, TaskPoolEx, NondeterministicEx]
 if !isnothing(args["executors"])
