@@ -29,7 +29,41 @@ large_16_c_julia_plot = large_16_c_julia_df |>
 
 large_16_c_julia_plot |> save("$(run_)/$(app)/time_comparison_plot.png")
 
-# SPEEDUP COMPARISON THREADEDEX
+# SEQUENTIAL COMPARISON
+julia_gb = groupby(julia_df[julia_df.func .== "debug_warshall_floops!", [:total_time_mean_seq,:input]], [:total_time_mean_seq,:input])
+julia_seq_df = combine(julia_gb,nrow => :count)
+julia_seq_df[!,"lang"] = repeat(["Julia"], first(size(julia_seq_df)))
+julia_seq_df = rename(julia_seq_df, Dict(:total_time_mean_seq => :time_mean_seq))
+# julia_seq_df[!, "time_mean_seq"] = julia_seq_df.time_mean_seq .* 1000000
+c_gb = groupby(c_df, [:time_mean_seq, :input])
+c_seq_df = combine(c_gb,nrow => :count)
+c_seq_df[!, "lang"] = repeat(["C"], first(size(c_seq_df)))
+c_seq_df[!, "time_mean_seq"] = c_seq_df.time_mean_seq ./ 1000000
+seq_df = vcat(c_seq_df, julia_seq_df)
+
+input_sizes = Dict(
+    "small" => "Small",
+    "medium" => "Medium",
+    "large" => "Large"
+)
+seq_df[!, "input"] = [input_sizes[val] for val in seq_df.input]
+
+seq_plot = seq_df |>
+    @vlplot(
+        mark={:bar, clip=true},
+        width=100,
+        x={:lang, axis={title=nothing}},
+        y={:time_mean_seq, axis={title="Execution Time"}},
+        color={:lang, axis={title="Language"}},
+        # column={"n_threads:n", axis={title="Number of Threads"}},
+        column={
+            :input, axis={title="Input Size"},
+            sort={field=:input,order=:descending} 
+        }
+    )
+seq_plot |> save("$(run_)/$(app)/seq_time_plot.png")
+
+# SPEEDUP COMPARISON DEPTHFIRSTEX
 floop_df = julia_df[julia_df.func .== "debug_warshall_floops!", :] 
 executor_df = floop_df[floop_df.executor_mt .== "DepthFirstEx", :]
 threads_df = julia_df[julia_df.func .== "debug_warshall_threads!", :]
@@ -46,6 +80,13 @@ speedup_df = vcat(
     c_df[:,[:func, :input, :n_threads, :speedup]]
 )
 
+input_sizes = Dict(
+    "small" => "Small",
+    "medium" => "Medium",
+    "large" => "Large"
+)
+speedup_df[:, "input"] = [input_sizes[val] for val in speedup_df.input]
+
 speedup_plot = speedup_df |>
     @vlplot(
         mark={:bar, clip=true},
@@ -53,7 +94,10 @@ speedup_plot = speedup_df |>
         y={:speedup, axis={title="Speedup"}},
         color={:func, axis={title="Parallel Implementation"}},
         column={"n_threads:n", axis={title="Number of Threads"}},
-        row={:input, axis={title="Input Size"}}
+        row={
+            :input, axis={title="Input Size"},
+            sort={field=:input,order=:descending} 
+        }
     )
 
 speedup_plot |> save("$(run_)/$(app)/speedup_plot.png")
@@ -99,6 +143,8 @@ julia_mem_df = vcat(julia_mem_df, seq_mem_df)
 
 final_mem_df = vcat(c_mem_df[:, [:func, :input, :n_threads, :memory_kb]], julia_mem_df[:, [:func, :input, :n_threads, :memory_kb]])
 
+final_mem_df[:, "input"] = [input_sizes[val] for val in final_mem_df.input]
+
 # TODO: change for log scale?
 mem_plot = final_mem_df |>
     @vlplot(
@@ -107,7 +153,10 @@ mem_plot = final_mem_df |>
         y={:memory_kb, axis={title="Memory Usage (Kb)"}},
         color={:func, axis={title="Parallel Implementation"}},
         column={:n_threads, axis={title="Number of Threads"}},
-        row={:input, axis={title="Input Size"}}    
+        row={
+            :input, axis={title="Input Size"},
+            sort={field=:input,order=:descending} 
+        }   
     )
 
 mem_plot |> save("$(run_)/$(app)/mem_plot.png")
