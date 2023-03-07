@@ -36,26 +36,38 @@ srad_df[:, :loop_imbalance_ratio] = srad_df.loop_1_imbalance_mean ./ srad_df.loo
 srad_df = srad_df[:, [:func, :input, :n_threads, :main_loop_time_mean, :main_loop_time_std, :loop_1_imbalance_mean, :loop_1_imbalance_std]]
 srad_df = rename(srad_df, Dict(:loop_1_imbalance_mean => :imbalance_mean, :loop_1_imbalance_std => :imbalance_std))
 
+# bench_names = Dict(
+#     "debug_bfs_spawn" => "BFS - @spawn", "debug_bfs_threads" => "BFS - @threads", "debug_bfs" => "BFS - sequential",
+#     "debug_srad_spawn" => "SRAD_V2 - @spawn", "debug_srad_threads" => "SRAD_V2 - @threads", "debug_srad" => "SRAD_V2 - sequential",
+#     "debug_lud_spawn" => "LUD - @spawn", "debug_lud_threads" => "LUD - @threads", "debug_lud" => "LUD - sequential"
+# )
+input_sizes = Dict(
+    "small" => "Small", "medium" => "Medium", "large" => "Large"
+)
 bench_names = Dict(
-    "debug_bfs_spawn" => "BFS - @spawn", "debug_bfs_threads" => "BFS - @threads", "debug_bfs" => "BFS - sequential",
-    "debug_srad_spawn" => "SRAD_V2 - @spawn", "debug_srad_threads" => "SRAD_V2 - @threads", "debug_srad" => "SRAD_V2 - sequential",
-    "debug_lud_spawn" => "LUD - @spawn", "debug_lud_threads" => "LUD - @threads", "debug_lud" => "LUD - sequential"
+    "debug_bfs_spawn" => "@spawn", "debug_bfs_threads" => "@threads", "debug_bfs" => "sequential",
+    "debug_srad_spawn" => "@spawn", "debug_srad_threads" => "@threads", "debug_srad" => "sequential",
+    "debug_lud_spawn" => "@spawn", "debug_lud_threads" => "@threads", "debug_lud" => "sequential"
 )
 bfs_df[:, "func"] = [bench_names[value] for value in bfs_df.func]
 lud_df[:, "func"] = [bench_names[value] for value in lud_df.func]
 srad_df[:, "func"] = [bench_names[value] for value in srad_df.func]
 
-seq_bfs_df = bfs_df[bfs_df.func.=="BFS - sequential", :]
-seq_lud_df = lud_df[lud_df.func.=="LUD - sequential", :]
-seq_srad_df = srad_df[srad_df.func.=="SRAD_V2 - sequential", :]
+bfs_df[:, "input"] = [input_sizes[value] for value in bfs_df.input]
+lud_df[:, "input"] = [input_sizes[value] for value in lud_df.input]
+srad_df[:, "input"] = [input_sizes[value] for value in srad_df.input]
+
+seq_bfs_df = bfs_df[bfs_df.func.==bench_names["debug_bfs"], :]
+seq_lud_df = lud_df[lud_df.func.==bench_names["debug_lud"], :]
+seq_srad_df = srad_df[srad_df.func.==bench_names["debug_srad"], :]
 parallel_bfs_df = vcat(
-    bfs_df[bfs_df.func.=="BFS - @threads", :], bfs_df[bfs_df.func.=="BFS - @spawn", :]
+    bfs_df[bfs_df.func.==bench_names["debug_bfs_threads"], :], bfs_df[bfs_df.func.==bench_names["debug_bfs_spawn"], :]
 )
 parallel_lud_df = vcat(
-    lud_df[lud_df.func.=="LUD - @threads", :], lud_df[lud_df.func.=="LUD - @spawn", :]
+    lud_df[lud_df.func.==bench_names["debug_lud_threads"], :], lud_df[lud_df.func.==bench_names["debug_lud_spawn"], :]
 )
 parallel_srad_df = vcat(
-    srad_df[srad_df.func.=="SRAD_V2 - @threads", :], srad_df[srad_df.func.=="SRAD_V2 - @spawn", :]
+    srad_df[srad_df.func.==bench_names["debug_srad_threads"], :], srad_df[srad_df.func.==bench_names["debug_srad_spawn"], :]
 )
 
 bfs_parallel_seq_df = innerjoin(parallel_bfs_df, seq_bfs_df, on=[:input, :n_threads], renamecols="_parallel" => "_seq")
@@ -69,12 +81,19 @@ bfs_speedup_df = select(bfs_speedup_df, :,
 
 bfs_speedup_plot = bfs_speedup_df |>
                    @vlplot(
-    title = {text = "BFS Speedup", anchor = :middle},
-    mark = {:line, clip = true},
-    x = {"n_threads:q", axis = {title = "Number of threads"}},
+    # title = {text = "BFS Speedup", anchor = :middle},
+    mark = {:bar, clip = true},
+    x = {"n_threads:n", axis = {title = nothing}},
     y = {:loop_1_speedup, axis = {title = "Speedup"}},
     color = {:func_parallel, axis = {title = "Macros"}},
-    row = {:input, axis = {title = "Input size"}}
+    column={
+        :func_parallel, 
+        header={title="Number of Threads", labels=false, titleOrient=:bottom},
+    },
+    row = {
+        "input:n", axis = {title = "Input size"},
+        sort={field=:input,order=:descending}
+        }
 )
 bfs_speedup_plot |> save("$(run_)/$(app)/bfs_speedup_plot.png")
 
@@ -84,7 +103,7 @@ bfs_time_plot = bfs_speedup_df |>
     mark = {:bar, clip = true},
     x = {"func_parallel:n", axis = {title = "Macro"}},
     y = {:loop_1_mean_time_mean_parallel, axis = {title = "Execution Time (s)"}},
-    color = {:func_parallel, axis = {title = "Macro"}},
+    color = {:func_parallel, axis = {title = "Macros"}},
     column = {:input, axis = {title = "Input Size"}},
     row = {:n_threads, axis = {title = "Number of threads"}}
 )
@@ -92,13 +111,16 @@ bfs_time_plot |> save("$(run_)/$(app)/bfs_time_plot.png")
 
 bfs_imbalance_plot = bfs_speedup_df |>
                      @vlplot(
-    title = {text = "BFS Imbalance", anchor = :middle},
-    mark = {:bar, clip = true},
-    x = {"func_parallel:n", axis = {title = "Macro"}},
-    y = {:imbalance_mean_parallel, axis = {title = "Imbalance (λ) "}},
+    # title = {text = "BFS Imbalance", anchor = :middle},
+    mark = {:line, clip = true},
+    x = {"n_threads:q", axis = {title = "Number of Threads"}},
+    y = {:imbalance_mean_parallel, axis = {title = "λ (%)"}},
     color = {:func_parallel, axis = {title = "Macro"}},
-    column = {:input, axis = {title = "Input size"}},
-    row = {:n_threads, axis = {title = "Number of Threads"}}
+    column = {
+        "input:n", axis = {title = "Input size"},
+        sort=["Small", "Medium, Large"]
+    },
+    # row = {:n_threads, axis = {title = "Number of Threads"}}
 )
 bfs_imbalance_plot |> save("$(run_)/$(app)/bfs_imbalance_plot.png")
 
@@ -117,12 +139,20 @@ lud_speedup_df = select(lud_speedup_df, :,
 
 lud_speedup_plot = lud_speedup_df |>
                    @vlplot(
-    title = {text = "LUD Speedup", anchor = :middle},
-    mark = {:line, clip = true},
-    x = {"n_threads:q", axis = {title = "Number of threads"}},
+    # title = {text = "LUD Speedup", anchor = :middle},
+    mark = {:bar, clip = true},
+    x = {"n_threads:n", axis = {title = nothing}},
     y = {:loop_1_speedup, axis = {title = "Speedup"}},
     color = {:func_parallel, axis = {title = "Macros"}},
-    row = {:input, axis = {title = "Input size"}}
+    column={
+            :func_parallel, 
+            header={title="Number of Threads", labels=false, titleOrient=:bottom},
+        },
+    row={
+        "input:n", 
+        axis={title="Input size"},
+        sort={field=:input,order=:descending}
+    },
 )
 lud_speedup_plot |> save("$(run_)/$(app)/lud_speedup_plot.png")
 
@@ -140,28 +170,46 @@ lud_time_plot |> save("$(run_)/$(app)/lud_time_plot.png")
 
 lud_imbalance_plot = lud_speedup_df |>
                      @vlplot(
-    title = {text = "LUD Imbalance", anchor = :middle},
-    mark = {:bar, clip = true},
-    x = {"func_parallel:n", axis = {title = "Macro"}},
-    y = {:loop_1_imbalance_mean_parallel, axis = {title = "Imbalance (λ) "}},
+    # title = {text = "LUD Imbalance", anchor = :middle},
+    mark = {:line, clip = true},
+    x={"n_threads:q", axis={title="Number of Threads"}},
+    y = {:loop_1_imbalance_mean_parallel, axis = {title = "λ (%)"}},
     color = {:func_parallel, axis = {title = "Macro"}},
-    column = {:input, axis = {title = "Input size"}},
-    row = {:n_threads, axis = {title = "Number of Threads"}}
+    column={
+            "input:n", 
+            axis={title="Input size"},
+            sort=["Small", "Medium, Large"]
+        },
+    # row = {:n_threads, axis = {title = "Number of Threads"}}
 )
 lud_imbalance_plot |> save("$(run_)/$(app)/lud_imbalance_plot.png")
 
-srad_speedup_plot = lud_speedup_df |>
+srad_parallel_seq_df = innerjoin(parallel_srad_df, seq_srad_df, on=[:input, :n_threads], renamecols="_parallel" => "_seq")
+srad_parallel_seq_df = hcat(srad_parallel_seq_df, DataFrame(speedup=Vector{Union{Missing,Float64}}(missing, size(srad_parallel_seq_df, 1))))
+
+srad_speedup_df = select(srad_parallel_seq_df, :, 
+[:main_loop_time_mean_parallel, :main_loop_time_mean_seq] => ((main_loop_time_mean_parallel, main_loop_time_mean_seq) -> (main_loop_time_mean_seq ./ main_loop_time_mean_parallel)) => :speedup)
+
+srad_speedup_plot = srad_speedup_df |>
                     @vlplot(
-    title = {text = "SRAD_V2 Speedup", anchor = :middle},
-    mark = {:line, clip = true},
-    x = {"n_threads:q", axis = {title = "Number of threads"}},
+    # title = {text = "SRAD_V2 Speedup", anchor = :middle},
+    mark = {:bar, clip = true},
+    x = {"n_threads:n", axis = {title = nothing}},
     y = {:speedup, axis = {title = "Speedup"}},
-    color = {:func_parallel, axis = {title = "Macros"}},
-    row = {:input, axis = {title = "Input size"}}
+    color={:func_parallel, axis={title="App - Macro"}},
+    column={
+            :func_parallel, 
+            header={title="Number of Threads", labels=false, titleOrient=:bottom},
+        },
+    row={
+        "input:n", 
+        axis={title="Input size"},
+        sort={field=:input,order=:descending}
+    },
 )
 srad_speedup_plot |> save("$(run_)/$(app)/srad_speedup_plot.png")
 
-srad_time_plot = speedup_df[speedup_df.bench_name.=="srad", :] |>
+srad_time_plot = srad_speedup_df |>
                  @vlplot(
     title = {text = "SRAD_V2 Execution Time", anchor = :middle},
     mark = {:bar, clip = true},
@@ -173,14 +221,18 @@ srad_time_plot = speedup_df[speedup_df.bench_name.=="srad", :] |>
 )
 srad_time_plot |> save("$(run_)/$(app)/srad_time_plot.png")
 
-srad_imbalance_plot = speedup_df[speedup_df.bench_name.=="srad", :] |>
+srad_imbalance_plot = srad_speedup_df |>
                       @vlplot(
-    title = {text = "SRAD_V2 Imbalance", anchor = :middle},
-    mark = {:bar, clip = true},
-    x = {"func_parallel:n", axis = {title = "Macro"}},
-    y = {:imbalance_mean_parallel, axis = {title = "Imbalance (λ) "}},
+    # title = {text = "SRAD_V2 Imbalance", anchor = :middle},
+    mark = {:line, clip = true},
+    x={"n_threads:q", axis={title="Number of Threads"}},
+    y = {:imbalance_mean_parallel, axis = {title = "λ (%)"}},
     color = {:func_parallel, axis = {title = "Macro"}},
-    column = {:input, axis = {title = "Input size"}},
-    row = {:n_threads, axis = {title = "Number of Threads"}}
+    column={
+            "input:n", 
+            axis={title="Input size"},
+            sort=["Small", "Medium, Large"]
+        }
+    # row = {:n_threads, axis = {title = "Number of Threads"}}
 )
 srad_imbalance_plot |> save("$(run_)/$(app)/srad_imbalance_plot.png")
