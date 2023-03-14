@@ -126,3 +126,115 @@ floop_mem_plot |> save("$(run)/$(app)/julia/floop_mem_plot.png")
 
 # TODO: analyse closely the comparisom between executor and threads 
 #     refine the precision. As it is it seems to be similar usage
+
+
+# SCALABILITY
+
+df = DataFrame(CSV.File("/Users/diana.barros/Documents/julia-mt-benchmarks/$(run)/$(app)/julia/scalability/pw_cracking_results_t2_1.csv"))
+df = vcat(df, DataFrame(CSV.File("/Users/diana.barros/Documents/julia-mt-benchmarks/$(run)/$(app)/julia/scalability/pw_cracking_results_t2_2.csv")))
+i = 4
+while i <= 64
+    for j in 1:2
+        temp = DataFrame(CSV.File("/Users/diana.barros/Documents/julia-mt-benchmarks/$(run)/$(app)/julia/scalability/pw_cracking_results_t$(i)_$(j).csv"))
+        df = vcat(df,temp)
+    end
+    i = i*2
+end
+
+df.input = length.(df.input)
+input_sizes = Dict(4 => "Small", 5 => "Medium", 6 => "Large")
+df[!,"input"] = [input_sizes[val] for val in df[!,"input"]]
+
+gb = groupby(df, [:func, :executor, :basesize, :input, :n_threads])
+df = combine(gb, 
+    [:main_loop_bytes, :main_loop_time] .=>  mean, [:main_loop_bytes, :main_loop_time] .=> std)
+
+floop_df = df[df.func .== "debug_$(func)_floop", :]
+
+seq_time_df = df[df.func .==  "debug_$(func)", [:input, :n_threads, :main_loop_time_mean]]
+
+floop_seq_df = innerjoin(floop_df, seq_time_df, on=[:input, :n_threads], renamecols= "_floop" => "_seq")
+floop_seq_df = hcat(floop_seq_df, DataFrame(speedup=Vector{Union{Missing, Float64}}(missing,size(floop_seq_df,1))))
+
+floop_speedup = select(floop_seq_df, :, [:main_loop_time_mean_floop, :main_loop_time_mean_seq] => ((main_loop_time_mean_floop, main_loop_time_mean_seq) -> (main_loop_time_mean_seq./main_loop_time_mean_floop)) => :speedup)
+
+# Comparing executors from FLoops
+floop_speedup_plot = floop_speedup[floop_speedup.input .== "Small", :] |>
+    @vlplot(
+        mark={:line, clip=true},
+        x={"n_threads:q", axis={title="Number of Threads"}},
+        y={:speedup, axis={title="Speedup"}},
+        color={:executor_floop, axis={title="Executor"}},
+        # column={:input, axis={title="Input size"}}
+        # width=300, height=200
+    )
+floop_speedup_plot |> save("$(run)/$(app)/julia/scalability/floop_speedup_plot_small.png")
+
+floop_speedup_plot = floop_speedup[floop_speedup.input .== "Medium", :] |>
+    @vlplot(
+        mark={:line, clip=true},
+        x={"n_threads:q", axis={title="Number of Threads"}},
+        y={:speedup, axis={title="Speedup"}},
+        color={:executor_floop, axis={title="Executor"}},
+        # column={:input, axis={title="Input size"}}
+        # width=300, height=200
+    )
+floop_speedup_plot |> save("$(run)/$(app)/julia/scalability/floop_speedup_plot_medium.png")
+
+floop_speedup_plot = floop_speedup[floop_speedup.input .== "Large", :] |>
+    @vlplot(
+        mark={:line, clip=true},
+        x={"n_threads:q", axis={title="Number of Threads"}},
+        y={:speedup, axis={title="Speedup"}},
+        color={:executor_floop, axis={title="Executor"}},
+        # column={:input, axis={title="Input size"}}
+        # width=300, height=200
+    )
+floop_speedup_plot |> save("$(run)/$(app)/julia/scalability/floop_speedup_plot_large.png")
+
+# NOTE: WorkStealingEx seems to have better performance among executors
+
+julia_executor = "WorkStealingEx"
+threads_df = df[df.func .== "debug_$(func)_threads",:]
+threads_df.func .= "Julia - @threads"
+executor_df = floop_df[floop_df.executor .== julia_executor,:]
+executor_df.func .= "Julia - Floops ($(julia_executor))"
+mt_df = vcat(executor_df, threads_df)
+mt_seq_df = innerjoin(mt_df, seq_time_df, on=[:input, :n_threads], renamecols= "_mt" => "_seq")
+mt_seq_df = hcat(mt_seq_df, DataFrame(speedup=Vector{Union{Missing, Float64}}(missing,size(mt_seq_df,1))))
+
+mt_speedup = select(mt_seq_df, :, [:main_loop_time_mean_mt, :main_loop_time_mean_seq] => ((main_loop_time_mean_mt, main_loop_time_mean_seq) -> (main_loop_time_mean_seq./main_loop_time_mean_mt)) => :speedup)
+
+# Comparing native and FLoops with DepthFirstEx
+mt_speedup_plot = mt_speedup[mt_speedup.input .== "Small", :] |>
+    @vlplot(
+        mark={:line, clip=true},
+        x={"n_threads:q", axis={title="Number of Threads"}},
+        y={:speedup, axis={title="Speedup"}},
+        color={:func_mt, axis={title="Parallel Implementation"}},
+        # column={:input, axis={title="Input size"}}
+        # width=300, height=200
+        )
+mt_speedup_plot |> save("$(run)/$(app)/julia/mt_speedup_plot_small.png")
+
+mt_speedup_plot = mt_speedup[mt_speedup.input .== "Medium", :] |>
+    @vlplot(
+        mark={:line, clip=true},
+        x={"n_threads:q", axis={title="Number of Threads"}},
+        y={:speedup, axis={title="Speedup"}},
+        color={:func_mt, axis={title="Parallel Implementation"}},
+        # column={:input, axis={title="Input size"}}
+        # width=300, height=200
+        )
+mt_speedup_plot |> save("$(run)/$(app)/julia/mt_speedup_plot_medium.png")
+
+mt_speedup_plot = mt_speedup[mt_speedup.input .== "Large", :] |>
+    @vlplot(
+        mark={:line, clip=true},
+        x={"n_threads:q", axis={title="Number of Threads"}},
+        y={:speedup, axis={title="Speedup"}},
+        color={:func_mt, axis={title="Parallel Implementation"}},
+        # column={:input, axis={title="Input size"}}
+        # width=300, height=200
+        )
+mt_speedup_plot |> save("$(run)/$(app)/julia/mt_speedup_plot_large.png")

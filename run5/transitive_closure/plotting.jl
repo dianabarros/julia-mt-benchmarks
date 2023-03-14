@@ -53,7 +53,7 @@ seq_plot = seq_df |>
         mark={:bar, clip=true},
         width=100,
         x={:lang, axis={title=nothing}},
-        y={:time_mean_seq, axis={title="Execution Time"}},
+        y={:time_mean_seq, axis={title="Execution Time (s)"}},
         color={:lang, axis={title="Language"}},
         # column={"n_threads:n", axis={title="Number of Threads"}},
         column={
