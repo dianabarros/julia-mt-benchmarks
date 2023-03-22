@@ -28,38 +28,44 @@ macros = Dict(
 )
 
 df[:,:input] = [input_sizes[val] for val in df.input]
-df[:,:func] = [macros[val] for val in df.func]
 
-seq_df = vcat(df[df.func .== macros["balanced"], :], df[df.func .== macros["unbalanced"], :])
-parallel_df = vcat(
-    df[df.func .== macros["balanced_mt"], :], df[df.func .== macros["balanced_spawn"], :],
-    df[df.func .== macros["unbalanced_mt"], :], df[df.func .== macros["unbalanced_spawn"], :]
-)
+balanced_seq_df = df[df.func .== "balanced", :]
+unbalanced_seq_df = df[df.func .== "unbalanced", :]
+balanced_parallel_df = vcat(df[df.func .== "balanced_mt", :], df[df.func .== "balanced_spawn", :])
+unbalanced_parallel_df = vcat(df[df.func .== "unbalanced_mt", :], df[df.func .== "unbalanced_spawn", :])
 
-parallel_seq_df = innerjoin(parallel_df, seq_df, on=[:input], renamecols= "_parallel" => "_seq")
-parallel_seq_df = hcat(parallel_seq_df, DataFrame(speedup=Vector{Union{Missing, Float64}}(missing,size(parallel_seq_df,1))))
+balanced_parallel_seq_df = innerjoin(balanced_parallel_df, balanced_seq_df, on=[:input], renamecols= "_parallel" => "_seq")
+balanced_parallel_seq_df = hcat(balanced_parallel_seq_df, DataFrame(speedup=Vector{Union{Missing, Float64}}(missing,size(balanced_parallel_seq_df,1))))
+balanced_speedup = select(balanced_parallel_seq_df, :, [:main_loop_time_mean_parallel, :main_loop_time_mean_seq] => ((main_loop_time_mean_parallel, main_loop_time_mean_seq) -> (main_loop_time_mean_seq./main_loop_time_mean_parallel)) => :speedup)
 
-speedup_df = select(parallel_seq_df, :, [:main_loop_time_mean_parallel, :main_loop_time_mean_seq] => ((main_loop_time_mean_parallel, main_loop_time_mean_seq) -> (main_loop_time_mean_seq./main_loop_time_mean_parallel)) => :speedup)
+unbalanced_parallel_seq_df = innerjoin(unbalanced_parallel_df, unbalanced_seq_df, on=[:input], renamecols= "_parallel" => "_seq")
+unbalanced_parallel_seq_df = hcat(unbalanced_parallel_seq_df, DataFrame(speedup=Vector{Union{Missing, Float64}}(missing,size(unbalanced_parallel_seq_df,1))))
+unbalanced_speedup = select(unbalanced_parallel_seq_df, :, [:main_loop_time_mean_parallel, :main_loop_time_mean_seq] => ((main_loop_time_mean_parallel, main_loop_time_mean_seq) -> (main_loop_time_mean_seq./main_loop_time_mean_parallel)) => :speedup)
 
-# TODO: change size?
+speedup_df = vcat(balanced_speedup, unbalanced_speedup)
+speedup_df[:,:func_parallel] = [macros[val] for val in speedup_df.func_parallel]
+
 speedup_plot = speedup_df |>
     @vlplot(
-        mark={:bar, clip=true},
+        mark={:line, clip=true},
         x={"n_threads_parallel:n", axis={title=nothing}},
         y={:speedup, axis={title="Speedup"}},
         color={:func_parallel, axis={title="App - Macro"}},
         column={
-            :func_parallel, 
-            header={title="Number of Threads", labels=false, titleOrient=:bottom},
+            :input, axis={title="Input size"},
+            sort={field=:input,order=:descending} 
         },
-        row={
-            "input:n", 
-            axis={title="Input size"},
-            sort={field=:input,order=:descending}
-        },
-        width=100
+        # row={
+        #     "input:n", 
+        #     axis={title="Input size"},
+        #     sort={field=:input,order=:descending}
+        # },
+        width=165
     )
 speedup_plot |> save("$(run_)/$(app)/speedup_plot_v2.png")
+
+parallel_df = vcat(balanced_parallel_df, unbalanced_parallel_df)
+parallel_df[:,:func] = [macros[val] for val in parallel_df.func]
 
 imbalance_plot = parallel_df |>
     @vlplot(
