@@ -54,7 +54,8 @@ if !isnothing(args["funcs"])
     funcs = eval(Meta.parse(args["funcs"]))
 end
 
-benchmark_funcs = [benchmark_friendly_numbers, benchmark_friendly_numbers_floop, benchmark_friendly_numbers_threads]
+# benchmark_funcs = [benchmark_friendly_numbers, benchmark_friendly_numbers_floop, benchmark_friendly_numbers_threads]
+benchmark_funcs = [friendly_numbers, friendly_numbers_threads, friendly_numbers_floop]
 if !isnothing(args["bench-funcs"])
     funcs = eval(Meta.parse(args["bench-funcs"]))
 end
@@ -172,10 +173,12 @@ if args["benchmarktools"]
     for run in bench_runs
         println("BenchmarkTools run = ", run) 
         if isnothing(run.ex)
-            suite = run.f(run.start, run.stop)
+            # suite = run.f(run.start, run.stop)
+            suite = @benchmark $run.f($run.start, $run.stop)
         else
             basesize=div(run.stop-run.start, nthreads())
-            suite = run.f(run.start, run.stop, run.ex(basesize=basesize))
+            # suite = run.f(run.start, run.stop, run.ex(basesize=basesize))
+            suite = @benchmark $run.f($run.start, $run.stop, $run.ex(basesize=$basesize))
         end
         push!(bench_df, (func=String(Symbol(run.f)), input=run.size, 
                 executor=isnothing(run.ex) ? missing : String(Symbol(run.ex)), 
