@@ -1,3 +1,6 @@
+using Pkg
+Pkg.activate("mutually_friendly_numbers")
+
 using FoldsThreads
 using FLoops
 using Base.Threads
