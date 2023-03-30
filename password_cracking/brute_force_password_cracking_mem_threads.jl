@@ -1,5 +1,5 @@
 using Pkg
-Pkg.activate("password_cracking")
+Pkg.activate("../../password_cracking")
 
 using MD5
 using Base.Threads

@@ -87,18 +87,22 @@ speedup_df[:, "input"] = [input_sizes[val] for val in speedup_df.input]
 
 speedup_plot = speedup_df |>
     @vlplot(
-        mark={:bar, clip=true},
-        x={:func, axis={title=nothing}},
+        mark={:line, clip=true},
+        x={:n_threads, axis={title="Number of Threads"}},
         y={:speedup, axis={title="Speedup"}},
         color={:func, axis={title="Parallel Implementation"}},
-        column={"n_threads:n", axis={title="Number of Threads"}},
-        row={
-            :input, axis={title="Input Size"},
-            sort={field=:input,order=:descending}    
-        }
+        column={
+            :input, axis={title="Input size"},
+            sort={field=:input,order=:descending} 
+        },
+        # row={
+        #     :input, axis={title="Input Size"},
+        #     sort={field=:input,order=:descending}    
+        # }
+        width=165
     )
 
-speedup_plot |> save("$(run_)/$(app)/speedup_plot.png")
+speedup_plot |> save("$(run_)/$(app)/line_speedup_plot.png")
 
 # NOTE: both Julia parallel implementations achieve speedup similar to OpenMP
 #  But Julia Floops with ThreadedEx was able to get better speedup depending on the number of threads
@@ -121,35 +125,47 @@ c_mem_df = vcat(
 )
 
 julia_executor = "ThreadedEx"
-julia_mem_df = DataFrame(CSV.File("/Users/diana.barros/Documents/julia-mt-benchmarks/$(run_)/$(app)/julia/mutually_friends_memory_2.csv"))
-i = 4
-while i <= 16
-    temp = DataFrame(CSV.File("/Users/diana.barros/Documents/julia-mt-benchmarks/$(run_)/$(app)/julia/mutually_friends_memory_$i.csv"))
-    julia_mem_df = vcat(julia_mem_df,temp)
-    i = i*2
-end
-julia_mem_df[:, :memory_kb] = julia_mem_df[:, :memory] ./ 1e3
+# julia_mem_df = DataFrame(CSV.File("/Users/diana.barros/Documents/julia-mt-benchmarks/$(run_)/$(app)/julia/mutually_friends_memory_2.csv"))
+# i = 4
+# while i <= 16
+#     temp = DataFrame(CSV.File("/Users/diana.barros/Documents/julia-mt-benchmarks/$(run_)/$(app)/julia/mutually_friends_memory_$i.csv"))
+#     julia_mem_df = vcat(julia_mem_df,temp)
+#     i = i*2
+# end
+# julia_mem_df[:, :memory_kb] = julia_mem_df[:, :memory] ./ 1e3
+julia_mem_df = DataFrame(CSV.File("/Users/diana.barros/Documents/julia-mt-benchmarks/run6/$(app)/julia/mem_df.csv"))
+julia_mem_df = rename(julia_mem_df, Dict("$(c_mem_metric)_mean" => :memory_kb))
+julia_seq_mem_df = julia_mem_df[julia_mem_df.n_threads .== 1, :]
+julia_parallel_mem_df = julia_mem_df[julia_mem_df.n_threads .!= 1, :]
+julia_mem_df = vcat(
+    julia_parallel_mem_df[:, [:func, :input, :n_threads, :memory_kb]],
+    DataFrame(func=julia_seq_mem_df.func, input=julia_seq_mem_df.input, n_threads=repeat([2],length(julia_seq_mem_df.n_threads)), memory_kb=julia_seq_mem_df.memory_kb),
+    DataFrame(func=julia_seq_mem_df.func, input=julia_seq_mem_df.input, n_threads=repeat([4],length(julia_seq_mem_df.n_threads)), memory_kb=julia_seq_mem_df.memory_kb),
+    DataFrame(func=julia_seq_mem_df.func, input=julia_seq_mem_df.input, n_threads=repeat([8],length(julia_seq_mem_df.n_threads)), memory_kb=julia_seq_mem_df.memory_kb),
+    DataFrame(func=julia_seq_mem_df.func, input=julia_seq_mem_df.input, n_threads=repeat([16],length(julia_seq_mem_df.n_threads)), memory_kb=julia_seq_mem_df.memory_kb)
+)
 
-seq_mem_df = julia_mem_df[julia_mem_df.func .==  "benchmark_friendly_numbers", :] # NOTE: No bytes allocated
-seq_mem_df.func .= "Julia - Sequential"
-threads_mem_df = julia_mem_df[julia_mem_df.func .==  "benchmark_friendly_numbers_threads", :]
-threads_mem_df.func .= "Julia - @threads"
-floop_mem_df = julia_mem_df[julia_mem_df.func .==  "benchmark_friendly_numbers_floop", :]
-floop_mem_df.func .= "Julia - Floops ($(julia_executor))"
+# seq_mem_df = julia_mem_df[julia_mem_df.func .==  "benchmark_friendly_numbers", :] # NOTE: No bytes allocated
+# seq_mem_df.func .= "Julia - Sequential"
+# threads_mem_df = julia_mem_df[julia_mem_df.func .==  "benchmark_friendly_numbers_threads", :]
+# threads_mem_df.func .= "Julia - @threads"
+# floop_mem_df = julia_mem_df[julia_mem_df.func .==  "benchmark_friendly_numbers_floop", :]
+# floop_mem_df.func .= "Julia - Floops ($(julia_executor))"
 
-julia_mem_df = vcat(threads_mem_df, floop_mem_df[floop_mem_df.executor .== julia_executor, :])
-julia_mem_df = vcat(julia_mem_df, seq_mem_df)
+# julia_mem_df = vcat(threads_mem_df, floop_mem_df[floop_mem_df.executor .== julia_executor, :])
+# julia_mem_df = vcat(julia_mem_df, seq_mem_df)
 
 final_mem_df = vcat(c_mem_df[:, [:func, :input, :n_threads, :memory_kb]], julia_mem_df[:, [:func, :input, :n_threads, :memory_kb]])
 
 final_mem_df[:, "input"] = [input_sizes[val] for val in final_mem_df.input]
+final_mem_df[!,"memory_gb"] = final_mem_df.memory_kb ./ 1000
 
 # TODO: change for log scale?
 mem_plot = final_mem_df |>
     @vlplot(
         mark={:bar, clip=true},
         x={:func, axis={title=nothing}},
-        y={:memory_kb, axis={title="Memory Usage (Kb)"}},
+        y={:memory_gb, axis={title="Memory Usage (Gb)", grid=false}, scale={type="log",base=10}},
         color={:func, axis={title="Parallel Implementation"}},
         column={:n_threads, axis={title="Number of Threads"}},
         row={
@@ -158,4 +174,4 @@ mem_plot = final_mem_df |>
         }    
     )
 
-mem_plot |> save("$(run_)/$(app)/mem_plot.png")
+mem_plot |> save("$(run_)/$(app)/mem_plot_2.png")

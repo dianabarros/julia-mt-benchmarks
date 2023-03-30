@@ -27,6 +27,8 @@ floop_seq_df = hcat(floop_seq_df, DataFrame(speedup=Vector{Union{Missing, Float6
 
 floop_speedup = select(floop_seq_df, :, [:main_loop_time_mean_floop, :main_loop_time_mean_seq] => ((main_loop_time_mean_floop, main_loop_time_mean_seq) -> (main_loop_time_mean_seq./main_loop_time_mean_floop)) => :speedup)
 
+floop_speedup[!, "input"] = [input_sizes[val] for val in floop_speedup.input]
+
 # Comparing executors from FLoops
 floop_speedup_plot = floop_speedup |>
     @vlplot(
@@ -34,8 +36,11 @@ floop_speedup_plot = floop_speedup |>
         x={"n_threads:q", axis={title="Number of Threads"}},
         y={:speedup, axis={title="Speedup"}},
         color={:executor_floop, axis={title="Executor"}},
-        column={:input, axis={title="Input size"}})
-        # width=300, height=200)
+        column={
+            :input, axis={title="Input size"},
+            sort={field=:input,order=:descending} 
+        },
+        width=165)#, height=200)
 
 floop_speedup_plot |> save("$(run)/$(app)/julia/floop_speedup_plot.png")
 
@@ -154,11 +159,11 @@ floop_speedup = select(floop_seq_df, :, [:main_loop_time_mean_floop, :main_loop_
 floop_speedup_plot = floop_speedup |>
     @vlplot(
         mark={:line, clip=true},
-        x={"n_threads:q", axis={title="Number of Threads"}},
+        x={"n_threads:n", axis={title="Number of Threads"}},
         y={:speedup, axis={title="Speedup"}},
         color={:executor_floop, axis={title="Executor"}},
-        column={:input, axis={title="Input size"},sort={field=:input,order=:descending}}
-        # width=300, height=200
+        column={:input, axis={title="Input size"},sort={field=:input,order=:descending}},
+        width=165 #, height=200
     )
 
 floop_speedup_plot |> save("$(run)/$(app)/julia/scalability/floop_speedup_plot.png")
@@ -180,11 +185,11 @@ mt_speedup = select(mt_seq_df, :, [:main_loop_time_mean_mt, :main_loop_time_mean
 mt_speedup_plot = mt_speedup |>
     @vlplot(
         mark={:line, clip=true},
-        x={"n_threads:q", axis={title="Number of Threads"}},
+        x={"n_threads:n", axis={title="Number of Threads"}},
         y={:speedup, axis={title="Speedup"}},
         color={:func_mt, axis={title="Parallel Implementation"}},
-        column={:input, axis={title="Input size"},sort={field=:input,order=:descending}}
-        # width=300, height=200
+        column={:input, axis={title="Input size"},sort={field=:input,order=:descending}},
+        width=165#, height=200
         )
 
 mt_speedup_plot |> save("$(run)/$(app)/julia/scalability/mt_speedup_plot.png")

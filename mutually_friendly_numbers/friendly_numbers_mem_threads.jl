@@ -1,3 +1,6 @@
+using Pkg
+Pkg.activate("../../mutually_friendly_numbers")
+
 using Base.Threads
 
 function gcd(u::Int64, v::Int64)

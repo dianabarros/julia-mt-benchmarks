@@ -1,5 +1,5 @@
 using Pkg
-Pkg.activate("transitive_closure")
+Pkg.activate("../../transitive_closure")
 
 using FoldsThreads
 using FLoops

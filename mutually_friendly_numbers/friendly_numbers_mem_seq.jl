@@ -1,3 +1,6 @@
+using Pkg
+Pkg.activate("../../mutually_friendly_numbers")
+
 function gcd(u::Int64, v::Int64)
     if(v == 0)
         return u

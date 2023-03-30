@@ -1,5 +1,5 @@
 using Pkg
-Pkg.activate("transitive_closure")
+Pkg.activate("../../transitive_closure")
 
 c_remainder_lookup = Dict(0=>0x80,
                           1=>0x40, 
