@@ -2,3 +2,5 @@ Manifest.toml
 */Manifest.toml
 *.csv
 *.txt
+.vscode
+.DS_Store

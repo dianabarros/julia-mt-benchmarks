@@ -1,4 +1,6 @@
 [deps]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
+Coverage = "a2441757-f6aa-5fb2-8edb-039e3f45d037"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+ProfileView = "c46f51b8-102a-5cf2-8d2c-8597cb0e0da7"
 VegaLite = "112f6efa-9a02-5b7d-90c0-432ed331239a"

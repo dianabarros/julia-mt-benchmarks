@@ -1,9 +1,7 @@
 using Pkg
 Pkg.activate("../../mutually_friendly_numbers")
 
-using FoldsThreads
-using FLoops
-using Base.Threads
+# import Profile
 
 function gcd(u::Int64, v::Int64)
     if(v == 0)
@@ -12,14 +10,16 @@ function gcd(u::Int64, v::Int64)
     return gcd(v, u % v)
 end
 
-function friendly_numbers_floop(start::Int64, stop::Int64, ex::FoldsThreads.FoldsBase.Executor)
+function friendly_numbers(
+        start::Int64, stop::Int64
+    ) where T
     last = stop - start + 1
     the_num = zeros(Int64, last)
     num = zeros(Int64, last)
     den = zeros(Int64, last)
     result_a = zeros(Int64, last)
     result_b = zeros(Int64, last)
-    @floop ex for i in start:stop
+    for i in start:stop
         ii = i - start
         sum = 1 + i
         the_num[ii+1] = i
@@ -52,10 +52,13 @@ function friendly_numbers_floop(start::Int64, stop::Int64, ex::FoldsThreads.Fold
             end
         end
     end
+    println(result_a, result_b)
     return result_a, result_b
 end
 
-start = parse(Int64,ARGS[1])
-stop = parse(Int64, ARGS[2])
-ex = eval(Meta.parse(ARGS[3]))(basesize=div(stop-start, nthreads()))
-friendly_numbers_floop(start, stop, ex)
+# start = parse(Int64,ARGS[1])
+# stop = parse(Int64, ARGS[2])
+# friendly_numbers(start, stop)
+# friendly_numbers(0, 10)
+# Profile.clear_malloc_data()
+friendly_numbers(0, 20)
