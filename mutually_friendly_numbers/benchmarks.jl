@@ -37,6 +37,7 @@ BenchmarkTools.DEFAULT_PARAMETERS.evals = 1
 
 
 inputs = Dict(
+    "test" => (0, 10),
     "small" => (0, 50000),
     "medium" => (0, 200000),
     "large" => (0, 350000)
@@ -65,6 +66,10 @@ if !isnothing(args["executors"])
     executors = eval(Meta.parse(args["executors"]))
 end
 
+threads_schedules = [Static, Dynamic]
+
+basesizes = [:default]
+
 iterations = args["its"]
 check_sequential = !args["no_check_sequential"]
 
@@ -75,22 +80,44 @@ for (size, range) in inputs
     for func in funcs
         if func == debug_friendly_numbers_floop
             for exec in executors
-                run = (f=func, size=size, start=range[1], stop=range[2], ex=exec, check_sequential=check_sequential)
+                for basesize in basesizes
+                    if basesize == :default
+                        run = (f=func, size=size, start=range[1], stop=range[2], ex=exec(basesize=div(range[2]-range[1],nthreads())), basesize=div(range[2]-range[1],nthreads()), check_sequential=check_sequential)
+                    else
+                        run = (f=func, size=size, start=range[1], stop=range[2], ex=exec(basesize=basesize), basesize=basesize, check_sequential=check_sequential)
+                    end
+                    push!(runs, run)
+                end
+            end
+        elseif func == debug_friendly_numbers_threads
+            for threads_schedule in threads_schedules
+                run = (f=func, size=size, start=range[1], stop=range[2], ex=threads_schedule, basesize=nothing, check_sequential=check_sequential)
                 push!(runs, run)
             end
         else
-            run = (f=func, size=size, start=range[1], stop=range[2], ex=nothing, check_sequential=check_sequential)
+            run = (f=func, size=size, start=range[1], stop=range[2], ex=nothing, basesize=nothing, check_sequential=check_sequential)
             push!(runs, run)
         end
     end
     for func in benchmark_funcs
         if func == benchmark_friendly_numbers_floop
             for exec in executors
-                run = (f=func, size=size, start=range[1], stop=range[2], ex=exec, check_sequential=check_sequential)
+                for basesize in basesizes
+                    if basesize == :default
+                        run = (f=func, size=size, start=range[1], stop=range[2], ex=exec(basesize=div(range[2]-range[1],nthreads())), basesize=div(range[2]-range[1],nthreads()), check_sequential=check_sequential)
+                    else
+                        run = (f=func, size=size, start=range[1], stop=range[2], ex=exec(basesize=basesize), basesize=basesize, check_sequential=check_sequential)
+                    end
+                    push!(bench_runs, run)
+                end
+            end
+        elseif func == benchmark_friendly_numbers_threads
+            for threads_schedule in threads_schedules
+                run = (f=func, size=size, start=range[1], stop=range[2], ex=threads_schedule, basesize=nothing, check_sequential=check_sequential)
                 push!(bench_runs, run)
             end
         else
-            run = (f=func, size=size, start=range[1], stop=range[2], ex=nothing, check_sequential=check_sequential)
+            run = (f=func, size=size, start=range[1], stop=range[2], ex=nothing, basesize=nothing, check_sequential=check_sequential)
             push!(bench_runs, run)
         end
     end
@@ -100,7 +127,7 @@ end
 println("Running compile runs")
 if !args["timed"]
     debug(debug_friendly_numbers, 0, 10)
-    debug(debug_friendly_numbers_threads, 0, 10)
+    debug(debug_friendly_numbers_threads, 0, 10, ex=Static)
     debug(debug_friendly_numbers_floop, 0, 10, ex=ThreadedEx(basesize=2))
 end
 if args["benchmarktools"]
@@ -134,9 +161,8 @@ if args["timed"]
         # it_ttime = Dict()
         for it in 1:iterations
             println("run = ", run) 
-            basesize=div(run.stop-run.start, nthreads())
             bench_sample = debug(
-                run.f, run.start, run.stop, ex=isnothing(run.ex) ? nothing : run.ex(basesize=basesize), check_sequential=run.check_sequential
+                run.f, run.start, run.stop, ex=isnothing(run.basesize) ? nothing : run.ex, check_sequential=run.check_sequential
             )
             # it_dist[it] = bench_sample.task_distribution
             # if haskey(bench_sample.suite, "task")
@@ -144,7 +170,7 @@ if args["timed"]
             # end
             push!(df, (iteration=it, func=String(Symbol(run.f)), input=run.size, 
                 executor=isnothing(run.ex) ? missing : String(Symbol(run.ex)), 
-                basesize = isnothing(run.ex) ? missing : basesize, n_threads=nthreads(), total_bytes=bench_sample.suite["app"].bytes, 
+                basesize = isnothing(run.basesize) ? missing : run.basesize, n_threads=nthreads(), total_bytes=bench_sample.suite["app"].bytes, 
                 total_time=bench_sample.suite["app"].time,main_loop_bytes=bench_sample.suite["loop"].bytes, main_loop_time=bench_sample.suite["loop"].time))
             CSV.write(df_file_name, df)
         end
@@ -176,13 +202,12 @@ if args["benchmarktools"]
             # suite = run.f(run.start, run.stop)
             suite = @benchmark $run.f($run.start, $run.stop)
         else
-            basesize=div(run.stop-run.start, nthreads())
             # suite = run.f(run.start, run.stop, run.ex(basesize=basesize))
-            suite = @benchmark $run.f($run.start, $run.stop, $run.ex(basesize=$basesize))
+            suite = @benchmark $run.f($run.start, $run.stop, $run.ex)
         end
         push!(bench_df, (func=String(Symbol(run.f)), input=run.size, 
                 executor=isnothing(run.ex) ? missing : String(Symbol(run.ex)), 
-                basesize = isnothing(run.ex) ? missing : basesize, n_threads=nthreads(),
+                basesize = isnothing(run.basesize) ? missing : run.basesize, n_threads=nthreads(),
                 memory=suite.memory))
         CSV.write(bench_df_file_name, bench_df)
     end

@@ -3,6 +3,10 @@ using FLoops
 using Base.Threads
 using BenchmarkTools
 
+abstract type Schedule end
+struct Static <: Schedule end
+struct Dynamic <: Schedule end
+
 mutable struct BenchmarkSample
     task_distribution::Vector{Vector{Int64}}
     suite::Dict{String,Union{NamedTuple,Vector{Vector{NamedTuple}}}}
@@ -105,14 +109,57 @@ function friendly_numbers_floop(start::Int64, stop::Int64, ex::FoldsThreads.Fold
     return result_a, result_b
 end
 
-function friendly_numbers_threads(start::Int64, stop::Int64)
+function friendly_numbers_threads(start::Int64, stop::Int64, ::Type{Static})
     last = stop - start + 1
     the_num = zeros(Int64, last)
     num = zeros(Int64, last)
     den = zeros(Int64, last)
     result_a = zeros(Int64, last)
     result_b = zeros(Int64, last)
-    @threads for i in start:stop
+    @threads :static for i in start:stop
+        ii = i - start
+        sum = 1 + i
+        the_num[ii+1] = i
+        done = i
+        factor = 2
+
+        while (factor < done)
+            if i % factor == 0
+                sum += factor + div(i, factor)
+                done = div(i, factor) 
+                if done == factor
+                    sum -= factor
+                end
+            end
+            factor += 1
+        end
+        num[ii+1] = sum
+        den[ii+1] = i
+        n = gcd(num[ii+1], den[ii+1])
+        num[ii+1] = div(num[ii+1], n)
+        den[ii+1] = div(den[ii+1], n)
+    end
+    n_result = 0
+    for i in 0:last-1
+        for j in i+1:last-1
+            if num[i+1] == num[j+1] && den[i+1] == den[j+1]
+                result_a[n_result+1] = the_num[i+1]
+                result_b[n_result+1] = the_num[j+1]
+                n_result += 1
+            end
+        end
+    end
+    return result_a, result_b
+end
+
+function friendly_numbers_threads(start::Int64, stop::Int64, ::Type{Dynamic})
+    last = stop - start + 1
+    the_num = zeros(Int64, last)
+    num = zeros(Int64, last)
+    den = zeros(Int64, last)
+    result_a = zeros(Int64, last)
+    result_b = zeros(Int64, last)
+    @threads :dynamic for i in start:stop
         ii = i - start
         sum = 1 + i
         the_num[ii+1] = i
@@ -251,7 +298,7 @@ function debug_friendly_numbers_floop(
 end
 
 function debug_friendly_numbers_threads(
-        start::Int64, stop::Int64;ex::Union{FoldsThreads.FoldsBase.Executor,Nothing}=nothing, 
+        start::Int64, stop::Int64;ex::Union{FoldsThreads.FoldsBase.Executor,Type{Static},Nothing}=nothing, 
         task_distribution::Union{Vector{Vector{Int64}},Nothing}=nothing,
         suite::Union{Dict{T},Nothing}=nothing
     ) where T
@@ -262,7 +309,60 @@ function debug_friendly_numbers_threads(
     result_a = zeros(Int64, last)
     result_b = zeros(Int64, last)
     suite["loop"] = @timed begin
-        @threads for i in start:stop
+        @threads :static for i in start:stop
+            push!(task_distribution[threadid()], i)
+            threadinfo = @timed begin
+                ii = i - start
+                sum = 1 + i
+                the_num[ii+1] = i
+                done = i
+                factor = 2
+
+                while (factor < done)
+                    if i % factor == 0
+                        sum += factor + div(i, factor)
+                        done = div(i, factor) 
+                        if done == factor
+                            sum -= factor
+                        end
+                    end
+                    factor += 1
+                end
+                num[ii+1] = sum
+                den[ii+1] = i
+                n = gcd(num[ii+1], den[ii+1])
+                num[ii+1] = div(num[ii+1], n)
+                den[ii+1] = div(den[ii+1], n)
+            end
+            push!(suite["task"][threadid()], threadinfo)
+        end
+    end
+    n_result = 0
+    for i in 0:last-1
+        for j in i+1:last-1
+            if num[i+1] == num[j+1] && den[i+1] == den[j+1]
+                result_a[n_result+1] = the_num[i+1]
+                result_b[n_result+1] = the_num[j+1]
+                n_result += 1
+            end
+        end
+    end
+    return result_a, result_b
+end
+
+function debug_friendly_numbers_threads(
+        start::Int64, stop::Int64;ex::Union{FoldsThreads.FoldsBase.Executor,Type{Dynamic},Nothing}=nothing, 
+        task_distribution::Union{Vector{Vector{Int64}},Nothing}=nothing,
+        suite::Union{Dict{T},Nothing}=nothing
+    ) where T
+    last = stop - start + 1
+    the_num = zeros(Int64, last)
+    num = zeros(Int64, last)
+    den = zeros(Int64, last)
+    result_a = zeros(Int64, last)
+    result_b = zeros(Int64, last)
+    suite["loop"] = @timed begin
+        @threads :dynamic for i in start:stop
             push!(task_distribution[threadid()], i)
             threadinfo = @timed begin
                 ii = i - start
@@ -445,7 +545,7 @@ function benchmark_friendly_numbers_threads(
 end
 
 function debug(f::T, start::Int64, stop::Int64;
-        ex::Union{FoldsThreads.FoldsBase.Executor,Nothing}=nothing, 
+        ex::Union{FoldsThreads.FoldsBase.Executor,Type{Static},Type{Dynamic},Nothing}=nothing, 
         check_sequential::Union{Bool,Nothing}=nothing
     ) where T
     task_distribution = [Int64[] for _ in 1:nthreads()]
