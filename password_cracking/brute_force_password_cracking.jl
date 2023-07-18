@@ -409,10 +409,10 @@ function brute_force_floop(hash1::Vector{UInt8}, ex::FoldsThreads.FoldsBase.Exec
     return found
 end
 
-function brute_force_threads(hash1::Vector{UInt8})
+function brute_force_threads_static(hash1::Vector{UInt8})
     lk = ReentrantLock()
     found = nothing
-    @threads for letter in letters if isnothing(found)
+    @threads :static for letter in letters if isnothing(found)
         local_str = fill('\0',1)
         local_str[1] = letter
         hash2 = md5(String(local_str))
@@ -425,7 +425,7 @@ function brute_force_threads(hash1::Vector{UInt8})
     end end
 
     if isnothing(found)
-        @threads for letter in letters if isnothing(found)
+        @threads :static for letter in letters if isnothing(found)
             local_str = fill('\0',2)
             local_str[1] = letter
             for letter in letters
@@ -442,7 +442,7 @@ function brute_force_threads(hash1::Vector{UInt8})
     end
 
     if isnothing(found)
-        @threads for letter in letters if isnothing(found)
+        @threads :static for letter in letters if isnothing(found)
             local_str = fill('\0',3)
             local_str[1] = letter
             for letter in letters if isnothing(found)
@@ -462,7 +462,7 @@ function brute_force_threads(hash1::Vector{UInt8})
     end
 
     if isnothing(found)
-        @threads for letter in letters if isnothing(found)
+        @threads :static for letter in letters if isnothing(found)
             local_str = fill('\0',4)
             local_str[1] = letter
             for letter in letters if isnothing(found)
@@ -485,7 +485,7 @@ function brute_force_threads(hash1::Vector{UInt8})
     end
 
     if isnothing(found)
-        @threads for letter in letters if isnothing(found)
+        @threads :static for letter in letters if isnothing(found)
             local_str = fill('\0',5)
             local_str[1] = letter
             for letter in letters if isnothing(found)
@@ -511,7 +511,7 @@ function brute_force_threads(hash1::Vector{UInt8})
     end
 
     if isnothing(found)
-        @threads for letter in letters if isnothing(found)
+        @threads :static for letter in letters if isnothing(found)
             local_str = fill('\0',6)
             local_str[1] = letter
             for letter in letters if isnothing(found)
@@ -540,7 +540,7 @@ function brute_force_threads(hash1::Vector{UInt8})
     end
 
     if isnothing(found)
-        @threads for letter in letters if isnothing(found)
+        @threads :static for letter in letters if isnothing(found)
             local_str = fill('\0',7)
             local_str[1] = letter
             for letter in letters if isnothing(found)
@@ -572,7 +572,206 @@ function brute_force_threads(hash1::Vector{UInt8})
     end
 
     if isnothing(found)
-        @threads for letter in letters if isnothing(found)
+        @threads :static for letter in letters if isnothing(found)
+            local_str = fill('\0',8)
+            local_str[1] = letter
+            for letter in letters if isnothing(found)
+                local_str[2] = letter
+                for letter in letters if isnothing(found)
+                    local_str[3] = letter
+                    for letter in letters if isnothing(found)
+                        local_str[4] = letter
+                        for letter in letters if isnothing(found)
+                            local_str[5] = letter
+                            for letter in letters if isnothing(found)
+                                local_str[6] = letter
+                                for letter in letters if isnothing(found)
+                                    local_str[7] = letter
+                                    for letter in letters
+                                        local_str[8] = letter
+                                        hash2 = md5(String(local_str))
+                                        if hash1 == hash2
+                                            lock(lk) do
+                                                found = String(local_str)
+                                            end
+                                            break
+                                        end
+                                    end
+                                end end
+                            end end
+                        end end
+                    end end
+                end end
+            end end
+        end end
+    end
+    return found
+end
+
+function brute_force_threads_dynamic(hash1::Vector{UInt8})
+    lk = ReentrantLock()
+    found = nothing
+    @threads :dynamic for letter in letters if isnothing(found)
+        local_str = fill('\0',1)
+        local_str[1] = letter
+        hash2 = md5(String(local_str))
+        if hash1 == hash2
+            lock(lk) do
+                found = String(local_str)
+            end
+            break
+        end
+    end end
+
+    if isnothing(found)
+        @threads :dynamic for letter in letters if isnothing(found)
+            local_str = fill('\0',2)
+            local_str[1] = letter
+            for letter in letters
+                local_str[2] = letter
+                hash2 = md5(String(local_str))
+                if hash1 == hash2
+                    lock(lk) do
+                        found = String(local_str)
+                    end
+                    break
+                end
+            end
+        end end   
+    end
+
+    if isnothing(found)
+        @threads :dynamic for letter in letters if isnothing(found)
+            local_str = fill('\0',3)
+            local_str[1] = letter
+            for letter in letters if isnothing(found)
+                local_str[2] = letter
+                for letter in letters
+                    local_str[3] = letter
+                    hash2 = md5(String(local_str))
+                    if hash1 == hash2
+                        lock(lk) do
+                            found = String(local_str)
+                        end
+                        break
+                    end
+                end
+            end end
+        end end
+    end
+
+    if isnothing(found)
+        @threads :dynamic for letter in letters if isnothing(found)
+            local_str = fill('\0',4)
+            local_str[1] = letter
+            for letter in letters if isnothing(found)
+                local_str[2] = letter
+                for letter in letters if isnothing(found)
+                    local_str[3] = letter
+                    for letter in letters
+                        local_str[4] = letter
+                        hash2 = md5(String(local_str))
+                        if hash1 == hash2
+                            lock(lk) do
+                                found = String(local_str)
+                            end
+                            break
+                        end
+                    end
+                end end
+            end end
+        end end
+    end
+
+    if isnothing(found)
+        @threads :dynamic for letter in letters if isnothing(found)
+            local_str = fill('\0',5)
+            local_str[1] = letter
+            for letter in letters if isnothing(found)
+                local_str[2] = letter
+                for letter in letters if isnothing(found)
+                    local_str[3] = letter
+                    for letter in letters if isnothing(found)
+                        local_str[4] = letter
+                        for letter in letters
+                            local_str[5] = letter
+                            hash2 = md5(String(local_str))
+                            if hash1 == hash2
+                                lock(lk) do
+                                    found = String(local_str)
+                                end
+                                break
+                            end
+                        end
+                    end end
+                end end
+            end end
+        end end
+    end
+
+    if isnothing(found)
+        @threads :dynamic for letter in letters if isnothing(found)
+            local_str = fill('\0',6)
+            local_str[1] = letter
+            for letter in letters if isnothing(found)
+                local_str[2] = letter
+                for letter in letters if isnothing(found)
+                    local_str[3] = letter
+                    for letter in letters if isnothing(found)
+                        local_str[4] = letter
+                        for letter in letters if isnothing(found)
+                            local_str[5] = letter
+                            for letter in letters
+                                local_str[6] = letter
+                                hash2 = md5(String(local_str))
+                                if hash1 == hash2
+                                    lock(lk) do
+                                        found = String(local_str)
+                                    end
+                                    break
+                                end
+                            end
+                        end end
+                    end end
+                end end
+            end end
+        end end
+    end
+
+    if isnothing(found)
+        @threads :dynamic for letter in letters if isnothing(found)
+            local_str = fill('\0',7)
+            local_str[1] = letter
+            for letter in letters if isnothing(found)
+                local_str[2] = letter
+                for letter in letters if isnothing(found)
+                    local_str[3] = letter
+                    for letter in letters if isnothing(found)
+                        local_str[4] = letter
+                        for letter in letters if isnothing(found)
+                            local_str[5] = letter
+                            for letter in letters if isnothing(found)
+                                local_str[6] = letter
+                                for letter in letters
+                                    local_str[7] = letter
+                                    hash2 = md5(String(local_str))
+                                    if hash1 == hash2
+                                        lock(lk) do
+                                            found = String(local_str)
+                                        end
+                                        break
+                                    end
+                                end
+                            end end
+                        end end
+                    end end
+                end end
+            end end
+        end end
+    end
+
+    if isnothing(found)
+        @threads :dynamic for letter in letters if isnothing(found)
             local_str = fill('\0',8)
             local_str[1] = letter
             for letter in letters if isnothing(found)
@@ -1073,7 +1272,7 @@ function debug_brute_force_floop(
     return found
 end
 
-function debug_brute_force_threads(
+function debug_brute_force_threads_static(
         hash1::Vector{UInt8}; ex::Union{FoldsThreads.FoldsBase.Executor,Nothing}=nothing,
         loop_tasks::Union{Vector{Vector{Vector{Int64}}},Nothing}=nothing,
         suite::Dict{T}
@@ -1083,7 +1282,7 @@ function debug_brute_force_threads(
     suite["loop_1_tasks"] = [NamedTuple[] for _ in 1:nthreads()]
     suite["main_loop"] = @timed begin
         suite["loop_1"] = @timed begin
-            @threads for letter in letters if isnothing(found)
+            @threads :static for letter in letters if isnothing(found)
                 push!(loop_tasks[1][threadid()], Int(letter))
                 task_time = @timed begin
                     local_str = fill('\0',1)
@@ -1103,7 +1302,7 @@ function debug_brute_force_threads(
         suite["loop_2_tasks"] = [NamedTuple[] for _ in 1:nthreads()]
         suite["loop_2"] = @timed begin
             if isnothing(found)
-                @threads for letter in letters if isnothing(found)
+                @threads :static for letter in letters if isnothing(found)
                     push!(loop_tasks[2][threadid()], Int(letter))
                     task_time = @timed begin
                         local_str = fill('\0',2)
@@ -1127,7 +1326,7 @@ function debug_brute_force_threads(
         suite["loop_3_tasks"] = [NamedTuple[] for _ in 1:nthreads()]
         suite["loop_3"] = @timed begin
             if isnothing(found)
-                @threads for letter in letters if isnothing(found)
+                @threads :static for letter in letters if isnothing(found)
                     push!(loop_tasks[3][threadid()], Int(letter))
                     task_time = @timed begin
                         local_str = fill('\0',3)
@@ -1154,7 +1353,7 @@ function debug_brute_force_threads(
         suite["loop_4_tasks"] = [NamedTuple[] for _ in 1:nthreads()]
         suite["loop_4"] = @timed begin
             if isnothing(found)
-                @threads for letter in letters if isnothing(found)
+                @threads :static for letter in letters if isnothing(found)
                     push!(loop_tasks[4][threadid()], Int(letter))
                     task_time = @timed begin
                         local_str = fill('\0',4)
@@ -1184,7 +1383,7 @@ function debug_brute_force_threads(
         suite["loop_5_tasks"] = [NamedTuple[] for _ in 1:nthreads()]
         suite["loop_5"] = @timed begin
             if isnothing(found)
-                @threads for letter in letters if isnothing(found)
+                @threads :static for letter in letters if isnothing(found)
                     push!(loop_tasks[5][threadid()], Int(letter))
                     task_time = @timed begin
                         local_str = fill('\0',5)
@@ -1217,7 +1416,7 @@ function debug_brute_force_threads(
         suite["loop_6_tasks"] = [NamedTuple[] for _ in 1:nthreads()]
         suite["loop_6"] = @timed begin
             if isnothing(found)
-                @threads for letter in letters if isnothing(found)
+                @threads :static for letter in letters if isnothing(found)
                     push!(loop_tasks[6][threadid()], Int(letter))
                     task_time = @timed begin
                         local_str = fill('\0',6)
@@ -1253,7 +1452,7 @@ function debug_brute_force_threads(
         suite["loop_7_tasks"] = [NamedTuple[] for _ in 1:nthreads()]
         suite["loop_7"] = @timed begin
             if isnothing(found)
-                @threads for letter in letters if isnothing(found)
+                @threads :static for letter in letters if isnothing(found)
                     push!(loop_tasks[7][threadid()], Int(letter))
                     task_time = @timed begin
                         local_str = fill('\0',7)
@@ -1292,7 +1491,268 @@ function debug_brute_force_threads(
         suite["loop_8_tasks"] = [NamedTuple[] for _ in 1:nthreads()]
         suite["loop_8"] = @timed begin
             if isnothing(found)
-                @threads for letter in letters if isnothing(found)
+                @threads :static for letter in letters if isnothing(found)
+                    push!(loop_tasks[8][threadid()], Int(letter))
+                    task_time = @timed begin
+                        local_str = fill('\0',8)
+                        local_str[1] = letter
+                        for letter in letters if isnothing(found)
+                            local_str[2] = letter
+                            for letter in letters if isnothing(found)
+                                local_str[3] = letter
+                                for letter in letters if isnothing(found)
+                                    local_str[4] = letter
+                                    for letter in letters if isnothing(found)
+                                        local_str[5] = letter
+                                        for letter in letters if isnothing(found)
+                                            local_str[6] = letter
+                                            for letter in letters if isnothing(found)
+                                                local_str[7] = letter
+                                                for letter in letters
+                                                    local_str[8] = letter
+                                                    hash2 = md5(String(local_str))
+                                                    if hash1 == hash2
+                                                        lock(lk) do
+                                                            found = String(local_str)
+                                                        end
+                                                        break
+                                                    end
+                                                end
+                                            end end
+                                        end end
+                                    end end
+                                end end
+                            end end
+                        end end
+                    end
+                    push!(suite["loop_8_tasks"][threadid()], task_time)
+                end end
+            end
+        end
+    end
+    return found
+end
+
+function debug_brute_force_threads_dynamic(
+        hash1::Vector{UInt8}; ex::Union{FoldsThreads.FoldsBase.Executor,Nothing}=nothing,
+        loop_tasks::Union{Vector{Vector{Vector{Int64}}},Nothing}=nothing,
+        suite::Dict{T}
+    ) where T
+    lk = ReentrantLock()
+    found = nothing
+    suite["loop_1_tasks"] = [NamedTuple[] for _ in 1:nthreads()]
+    suite["main_loop"] = @timed begin
+        suite["loop_1"] = @timed begin
+            @threads :dynamic for letter in letters if isnothing(found)
+                push!(loop_tasks[1][threadid()], Int(letter))
+                task_time = @timed begin
+                    local_str = fill('\0',1)
+                    local_str[1] = letter
+                    hash2 = md5(String(local_str))
+                    if hash1 == hash2
+                        lock(lk) do
+                            found = String(local_str)
+                        end
+                        break
+                    end
+                end
+                push!(suite["loop_1_tasks"][threadid()], task_time)
+            end end
+        end
+
+        suite["loop_2_tasks"] = [NamedTuple[] for _ in 1:nthreads()]
+        suite["loop_2"] = @timed begin
+            if isnothing(found)
+                @threads :dynamic for letter in letters if isnothing(found)
+                    push!(loop_tasks[2][threadid()], Int(letter))
+                    task_time = @timed begin
+                        local_str = fill('\0',2)
+                        local_str[1] = letter
+                        for letter in letters
+                            local_str[2] = letter
+                            hash2 = md5(String(local_str))
+                            if hash1 == hash2
+                                lock(lk) do
+                                    found = String(local_str)
+                                end
+                                break
+                            end
+                        end
+                    end
+                    push!(suite["loop_2_tasks"][threadid()], task_time)
+                end end   
+            end
+        end
+
+        suite["loop_3_tasks"] = [NamedTuple[] for _ in 1:nthreads()]
+        suite["loop_3"] = @timed begin
+            if isnothing(found)
+                @threads :dynamic for letter in letters if isnothing(found)
+                    push!(loop_tasks[3][threadid()], Int(letter))
+                    task_time = @timed begin
+                        local_str = fill('\0',3)
+                        local_str[1] = letter
+                        for letter in letters if isnothing(found)
+                            local_str[2] = letter
+                            for letter in letters
+                                local_str[3] = letter
+                                hash2 = md5(String(local_str))
+                                if hash1 == hash2
+                                    lock(lk) do
+                                        found = String(local_str)
+                                    end
+                                    break
+                                end
+                            end
+                        end end
+                    end
+                    push!(suite["loop_3_tasks"][threadid()], task_time)
+                end end
+            end
+        end
+
+        suite["loop_4_tasks"] = [NamedTuple[] for _ in 1:nthreads()]
+        suite["loop_4"] = @timed begin
+            if isnothing(found)
+                @threads :dynamic for letter in letters if isnothing(found)
+                    push!(loop_tasks[4][threadid()], Int(letter))
+                    task_time = @timed begin
+                        local_str = fill('\0',4)
+                        local_str[1] = letter
+                        for letter in letters if isnothing(found)
+                            local_str[2] = letter
+                            for letter in letters if isnothing(found)
+                                local_str[3] = letter
+                                for letter in letters
+                                    local_str[4] = letter
+                                    hash2 = md5(String(local_str))
+                                    if hash1 == hash2
+                                        lock(lk) do
+                                            found = String(local_str)
+                                        end
+                                        break
+                                    end
+                                end
+                            end end
+                        end end
+                    end
+                    push!(suite["loop_4_tasks"][threadid()], task_time)
+                end end
+            end
+        end
+
+        suite["loop_5_tasks"] = [NamedTuple[] for _ in 1:nthreads()]
+        suite["loop_5"] = @timed begin
+            if isnothing(found)
+                @threads :dynamic for letter in letters if isnothing(found)
+                    push!(loop_tasks[5][threadid()], Int(letter))
+                    task_time = @timed begin
+                        local_str = fill('\0',5)
+                        local_str[1] = letter
+                        for letter in letters if isnothing(found)
+                            local_str[2] = letter
+                            for letter in letters if isnothing(found)
+                                local_str[3] = letter
+                                for letter in letters if isnothing(found)
+                                    local_str[4] = letter
+                                    for letter in letters
+                                        local_str[5] = letter
+                                        hash2 = md5(String(local_str))
+                                        if hash1 == hash2
+                                            lock(lk) do
+                                                found = String(local_str)
+                                            end
+                                            break
+                                        end
+                                    end
+                                end end
+                            end end
+                        end end
+                    end
+                    push!(suite["loop_5_tasks"][threadid()], task_time)
+                end end
+            end
+        end
+
+        suite["loop_6_tasks"] = [NamedTuple[] for _ in 1:nthreads()]
+        suite["loop_6"] = @timed begin
+            if isnothing(found)
+                @threads :dynamic for letter in letters if isnothing(found)
+                    push!(loop_tasks[6][threadid()], Int(letter))
+                    task_time = @timed begin
+                        local_str = fill('\0',6)
+                        local_str[1] = letter
+                        for letter in letters if isnothing(found)
+                            local_str[2] = letter
+                            for letter in letters if isnothing(found)
+                                local_str[3] = letter
+                                for letter in letters if isnothing(found)
+                                    local_str[4] = letter
+                                    for letter in letters if isnothing(found)
+                                        local_str[5] = letter
+                                        for letter in letters
+                                            local_str[6] = letter
+                                            hash2 = md5(String(local_str))
+                                            if hash1 == hash2
+                                                lock(lk) do
+                                                    found = String(local_str)
+                                                end
+                                                break
+                                            end
+                                        end
+                                    end end
+                                end end
+                            end end
+                        end end
+                    end
+                    push!(suite["loop_6_tasks"][threadid()], task_time)
+                end end
+            end
+        end
+
+        suite["loop_7_tasks"] = [NamedTuple[] for _ in 1:nthreads()]
+        suite["loop_7"] = @timed begin
+            if isnothing(found)
+                @threads :dynamic for letter in letters if isnothing(found)
+                    push!(loop_tasks[7][threadid()], Int(letter))
+                    task_time = @timed begin
+                        local_str = fill('\0',7)
+                        local_str[1] = letter
+                        for letter in letters if isnothing(found)
+                            local_str[2] = letter
+                            for letter in letters if isnothing(found)
+                                local_str[3] = letter
+                                for letter in letters if isnothing(found)
+                                    local_str[4] = letter
+                                    for letter in letters if isnothing(found)
+                                        local_str[5] = letter
+                                        for letter in letters if isnothing(found)
+                                            local_str[6] = letter
+                                            for letter in letters
+                                                local_str[7] = letter
+                                                hash2 = md5(String(local_str))
+                                                if hash1 == hash2
+                                                    lock(lk) do
+                                                        found = String(local_str)
+                                                    end
+                                                    break
+                                                end
+                                            end
+                                        end end
+                                    end end
+                                end end
+                            end end
+                        end end
+                    end
+                    push!(suite["loop_7_tasks"][threadid()], task_time)
+                end end
+            end
+        end
+
+        suite["loop_8_tasks"] = [NamedTuple[] for _ in 1:nthreads()]
+        suite["loop_8"] = @timed begin
+            if isnothing(found)
+                @threads :dynamic for letter in letters if isnothing(found)
                     push!(loop_tasks[8][threadid()], Int(letter))
                     task_time = @timed begin
                         local_str = fill('\0',8)

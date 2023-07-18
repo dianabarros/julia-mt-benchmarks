@@ -50,13 +50,13 @@ if !isnothing(args["inputs"])
     inputs = arg_inputs
 end
 
-funcs =[debug_friendly_numbers, debug_friendly_numbers_threads, debug_friendly_numbers_floop]
+funcs =[debug_friendly_numbers, debug_friendly_numbers_threads_static, debug_friendly_numbers_threads_dynamic, debug_friendly_numbers_floop]
 if !isnothing(args["funcs"])
     funcs = eval(Meta.parse(args["funcs"]))
 end
 
 # benchmark_funcs = [benchmark_friendly_numbers, benchmark_friendly_numbers_floop, benchmark_friendly_numbers_threads]
-benchmark_funcs = [friendly_numbers, friendly_numbers_threads, friendly_numbers_floop]
+benchmark_funcs = [friendly_numbers, friendly_numbers_threads_static, friendly_numbers_threads_dynamic, friendly_numbers_floop]
 if !isnothing(args["bench-funcs"])
     funcs = eval(Meta.parse(args["bench-funcs"]))
 end
@@ -65,8 +65,6 @@ executors = [ThreadedEx, WorkStealingEx, DepthFirstEx, TaskPoolEx, Nondeterminis
 if !isnothing(args["executors"])
     executors = eval(Meta.parse(args["executors"]))
 end
-
-threads_schedules = [Static, Dynamic]
 
 basesizes = [:default]
 
@@ -89,11 +87,6 @@ for (size, range) in inputs
                     push!(runs, run)
                 end
             end
-        elseif func == debug_friendly_numbers_threads
-            for threads_schedule in threads_schedules
-                run = (f=func, size=size, start=range[1], stop=range[2], ex=threads_schedule, basesize=nothing, check_sequential=check_sequential)
-                push!(runs, run)
-            end
         else
             run = (f=func, size=size, start=range[1], stop=range[2], ex=nothing, basesize=nothing, check_sequential=check_sequential)
             push!(runs, run)
@@ -111,11 +104,6 @@ for (size, range) in inputs
                     push!(bench_runs, run)
                 end
             end
-        elseif func == benchmark_friendly_numbers_threads
-            for threads_schedule in threads_schedules
-                run = (f=func, size=size, start=range[1], stop=range[2], ex=threads_schedule, basesize=nothing, check_sequential=check_sequential)
-                push!(bench_runs, run)
-            end
         else
             run = (f=func, size=size, start=range[1], stop=range[2], ex=nothing, basesize=nothing, check_sequential=check_sequential)
             push!(bench_runs, run)
@@ -127,12 +115,14 @@ end
 println("Running compile runs")
 if !args["timed"]
     debug(debug_friendly_numbers, 0, 10)
-    debug(debug_friendly_numbers_threads, 0, 10, ex=Static)
+    debug(debug_friendly_numbers_threads_static, 0, 10)
+    debug(debug_friendly_numbers_threads_dynamic, 0, 10)
     debug(debug_friendly_numbers_floop, 0, 10, ex=ThreadedEx(basesize=2))
 end
 if args["benchmarktools"]
     benchmark_friendly_numbers(0, 10)
-    benchmark_friendly_numbers_threads(0, 10)
+    benchmark_friendly_numbers_threads_static(0, 10)
+    benchmark_friendly_numbers_threads_dynamic(0, 10)
     benchmark_friendly_numbers_floop(0, 10, ThreadedEx(basesize=2))
 end
 
@@ -168,8 +158,9 @@ if args["timed"]
             # if haskey(bench_sample.suite, "task")
             #     it_ttime[it] = bench_sample.suite["task"]
             # end
+            ex_name = isnothing(run.ex) ? missing : string(typeof(run.ex).name.name)
             push!(df, (iteration=it, func=String(Symbol(run.f)), input=run.size, 
-                executor=isnothing(run.ex) ? missing : String(Symbol(run.ex)), 
+                executor=ex_name, 
                 basesize = isnothing(run.basesize) ? missing : run.basesize, n_threads=nthreads(), total_bytes=bench_sample.suite["app"].bytes, 
                 total_time=bench_sample.suite["app"].time,main_loop_bytes=bench_sample.suite["loop"].bytes, main_loop_time=bench_sample.suite["loop"].time))
             CSV.write(df_file_name, df)
@@ -205,8 +196,9 @@ if args["benchmarktools"]
             # suite = run.f(run.start, run.stop, run.ex(basesize=basesize))
             suite = @benchmark $run.f($run.start, $run.stop, $run.ex)
         end
+        ex_name = isnothing(run.ex) ? missing : string(typeof(run.ex).name.name)
         push!(bench_df, (func=String(Symbol(run.f)), input=run.size, 
-                executor=isnothing(run.ex) ? missing : String(Symbol(run.ex)), 
+                executor=ex_name, 
                 basesize = isnothing(run.basesize) ? missing : run.basesize, n_threads=nthreads(),
                 memory=suite.memory))
         CSV.write(bench_df_file_name, bench_df)

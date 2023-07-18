@@ -35,6 +35,7 @@ BenchmarkTools.DEFAULT_PARAMETERS.samples = 4
 BenchmarkTools.DEFAULT_PARAMETERS.evals = 1
 
 inputs = Dict(
+    "test" => "transitive_closure/transitive_closure2.in",
     "small" => "transitive_closure/1280_nodes.in",
     "medium" => "transitive_closure/2560_nodes.in",
     "large" => "transitive_closure/transitive_closure.in"
@@ -47,12 +48,12 @@ if !isnothing(args["inputs"])
     inputs = arg_inputs
 end
 
-funcs = [debug_warshall!, debug_warshall_threads!, debug_warshall_floops!]
+funcs = [debug_warshall!, debug_warshall_threads_static!, debug_warshall_threads_dynamic!, debug_warshall_floops!]
 if !isnothing(args["funcs"])
     funcs = eval(Meta.parse(args["funcs"]))
 end
 
-benchmark_funcs = [warshall!, warshall_threads!, warshall_floops!]
+benchmark_funcs = [warshall!, warshall_threads_static!, warshall_threads_dynamic!, warshall_floops!]
 if !isnothing(args["bench-funcs"])
     funcs = eval(Meta.parse(args["bench-funcs"]))
 end
@@ -61,6 +62,8 @@ executors = [ThreadedEx, WorkStealingEx, DepthFirstEx, TaskPoolEx, Nondeterminis
 if !isnothing(args["executors"])
     executors = eval(Meta.parse(args["executors"]))
 end
+
+basesizes = [:default]
 
 iterations = args["its"]
 check_sequential = !args["no_check_sequential"]
@@ -74,8 +77,14 @@ for (size, file_path) in inputs
     for func in funcs
         if func == debug_warshall_floops!
             for exec in executors
-                run = (f=func, size=size, nNodes=nNodes, bytes_per_row=bytes_per_row, graph=graph, ex=exec, basesize=div(nNodes, nthreads()), check_sequential=check_sequential)
-                push!(runs, run)
+                for basesize in basesizes
+                    if basesize == :default
+                        run = (f=func, size=size, nNodes=nNodes, bytes_per_row=bytes_per_row, graph=graph, ex=exec, basesize=div(nNodes, nthreads()), check_sequential=check_sequential)
+                    else
+                        run = (f=func, size=size, nNodes=nNodes, bytes_per_row=bytes_per_row, graph=graph, ex=exec, basesize=basesize, check_sequential=check_sequential)
+                    end
+                    push!(runs, run)
+                end
             end
         else
             run = (f=func, size=size, ex=nothing, basesize=nothing, nNodes=nNodes, bytes_per_row=bytes_per_row, graph=graph, check_sequential=check_sequential)
@@ -85,8 +94,14 @@ for (size, file_path) in inputs
     for func in benchmark_funcs
         if func == warshall_floops!
             for exec in executors
-                run = (f=func, size=size, nNodes=nNodes, bytes_per_row=bytes_per_row, graph=graph, ex=exec, basesize=div(nNodes, nthreads()), check_sequential=check_sequential)
-                push!(bench_runs, run)
+                for basesize in basesizes
+                    if basesize == :default
+                        run = (f=func, size=size, nNodes=nNodes, bytes_per_row=bytes_per_row, graph=graph, ex=exec, basesize=div(nNodes, nthreads()), check_sequential=check_sequential)
+                    else
+                        run = (f=func, size=size, nNodes=nNodes, bytes_per_row=bytes_per_row, graph=graph, ex=exec, basesize=basesize, check_sequential=check_sequential)
+                    end
+                    push!(bench_runs, run)
+                end
             end
         else
             run = (f=func, size=size, ex=nothing, basesize=nothing, nNodes=nNodes, bytes_per_row=bytes_per_row, graph=graph, check_sequential=check_sequential)
@@ -100,12 +115,14 @@ println("Running compile runs")
 nNodes, bytes_per_row, graph = read_file("transitive_closure/transitive_closure2.in")
 if args["timed"]
     debug(debug_warshall!, nNodes, bytes_per_row, graph)
-    debug(debug_warshall_threads!, nNodes, bytes_per_row, graph)
+    debug(debug_warshall_threads_static!, nNodes, bytes_per_row, graph)
+    debug(debug_warshall_threads_dynamic!, nNodes, bytes_per_row, graph)
     debug(debug_warshall_floops!, nNodes, bytes_per_row, graph, ex=ThreadedEx(basesize=2))
 end
 if args["benchmarktools"]
     warshall!(nNodes, bytes_per_row, graph)
-    warshall_threads!(nNodes, bytes_per_row, graph)
+    warshall_threads_static!(nNodes, bytes_per_row, graph)
+    warshall_threads_dynamic!(nNodes, bytes_per_row, graph)
     warshall_floops!(nNodes, bytes_per_row, graph, ThreadedEx(basesize=2))
 end
 

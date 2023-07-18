@@ -82,24 +82,24 @@ if !isnothing(args["inputs"])
     inputs = arg_inputs
 end
 
-input_samples = 10
+input_samples = 1
 
-funcs = [debug_brute_force, debug_brute_force_threads, debug_brute_force_floop]
+funcs = [debug_brute_force, debug_brute_force_threads_static, debug_brute_force_threads_dynamic, debug_brute_force_floop]
 if !isnothing(args["funcs"])
     funcs = eval(Meta.parse(args["funcs"]))
 end
 
-benchmark_funcs = [brute_force, brute_force_floop, brute_force_threads]
+benchmark_funcs = [brute_force, brute_force_floop, brute_force_threads_static, brute_force_threads_dynamic]
 if !isnothing(args["bench-funcs"])
     funcs = eval(Meta.parse(args["bench-funcs"]))
 end
-
-basesizes = [div(length(letters), nthreads()) > 0 ? div(length(letters), nthreads()) : 1]
 
 executors = [ThreadedEx, WorkStealingEx, DepthFirstEx, TaskPoolEx, NondeterministicEx]
 if !isnothing(args["executors"])
     executors = eval(Meta.parse(args["executors"]))
 end
+
+basesizes = [:default]
 
 iterations = args["its"]
 check_sequential = !args["no_check_sequential"]
@@ -115,7 +115,11 @@ for pw_size in keys(inputs)
             if func == debug_brute_force_floop
                 for exec in executors
                     for basesize in basesizes
-                        run = (f=func, pw=pw, hash_str=hash_str, ex=exec, basesize=basesize, check_sequential=check_sequential)
+                        if basesize == :default
+                            run = (f=func, pw=pw, hash_str=hash_str, ex=exec(basesize=(div(length(letters), nthreads()) > 0 ? div(length(letters), nthreads()) : 1)), basesize=(div(length(letters), nthreads()) > 0 ? div(length(letters), nthreads()) : 1), check_sequential=check_sequential)
+                        else
+                            run = (f=func, pw=pw, hash_str=hash_str, ex=exec(basesize=basesize), basesize=basesize, check_sequential=check_sequential)
+                        end
                         push!(runs, run)
                     end
                 end
@@ -134,7 +138,11 @@ for pw_size in keys(inputs)
             if func == brute_force_floop
                 for exec in executors
                     for basesize in basesizes
-                        run = (f=func, pw=pw, hash_str=hash_str, ex=exec, basesize=basesize, check_sequential=check_sequential)
+                        if basesize == :default
+                            run = (f=func, pw=pw, hash_str=hash_str, ex=exec(div(length(letters), nthreads()) > 0 ? div(length(letters), nthreads()) : 1), basesize=(div(length(letters), nthreads()) > 0 ? div(length(letters), nthreads()) : 1), check_sequential=check_sequential)
+                        else
+                            run = (f=func, pw=pw, hash_str=hash_str, ex=exec, basesize=basesize, check_sequential=check_sequential)
+                        end
                         push!(bench_runs, run)
                     end
                 end
@@ -150,12 +158,14 @@ end
 println("Running compile runs")
 if args["timed"]
     debug_crack_password(debug_brute_force,"800618943025315f869e4e1f09471012")
-    debug_crack_password(debug_brute_force_threads,"800618943025315f869e4e1f09471012")
+    debug_crack_password(debug_brute_force_threads_static,"800618943025315f869e4e1f09471012")
+    debug_crack_password(debug_brute_force_threads_dynamic,"800618943025315f869e4e1f09471012")
     debug_crack_password(debug_brute_force_floop,"800618943025315f869e4e1f09471012", ex=ThreadedEx(basesize=2))
 end
 if args["benchmarktools"]
     brute_force(hex2bytes("800618943025315f869e4e1f09471012"))
-    brute_force_threads(hex2bytes("800618943025315f869e4e1f09471012"))
+    brute_force_threads_static(hex2bytes("800618943025315f869e4e1f09471012"))
+    brute_force_threads_dynamic(hex2bytes("800618943025315f869e4e1f09471012"))
     brute_force_floop(hex2bytes("800618943025315f869e4e1f09471012"), ThreadedEx(basesize=2))
 end 
 
@@ -184,9 +194,9 @@ if args["timed"]
         # it_dist = Dict()
         # it_ttime = Dict()
         for it in 1:iterations
-            println("run = ", run)
+            @show run
             bench_sample = debug_crack_password(
-                run.f, run.hash_str, ex=isnothing(run.ex) ? nothing : run.ex(basesize=run.basesize), check_sequential=run.check_sequential
+                run.f, run.hash_str, ex=isnothing(run.ex) ? nothing : run.ex, check_sequential=run.check_sequential
             )
             # it_dist[it] = bench_sample.loop_tasks
             # for (key, value) in bench_sample.suite
@@ -197,7 +207,8 @@ if args["timed"]
             #         it_ttime[it][key] = value
             #     end
             # end
-            push!(df, (iteration=it, func=String(Symbol(run.f)), input=run.pw, executor=isnothing(run.ex) ? missing : String(Symbol(run.ex)), basesize=isnothing(run.basesize) ? missing : run.basesize, 
+            ex_name = isnothing(run.ex) ? missing : string(typeof(run.ex).name.name)
+            push!(df, (iteration=it, func=String(Symbol(run.f)), input=run.pw, executor=ex_name, basesize=isnothing(run.basesize) ? missing : run.basesize, 
                 n_threads=nthreads(), total_bytes=bench_sample.suite["app"].bytes, total_time=bench_sample.suite["app"].time,
                 main_loop_bytes=bench_sample.suite["main_loop"].bytes, main_loop_time=bench_sample.suite["main_loop"].time,
                 loop_1_time=haskey(bench_sample.suite, "loop_1") ? bench_sample.suite["loop_1"].time : 0.0, 
@@ -237,9 +248,10 @@ if args["benchmarktools"]
         if isnothing(run.ex)
             suite = benchmark_brute_force(run.f, run.hash_str)
         else
-            suite = benchmark_brute_force(run.f, run.hash_str, ex=run.ex(basesize=run.basesize))
+            suite = benchmark_brute_force(run.f, run.hash_str, ex=run.ex)
         end
-        push!(bench_df, (func=String(Symbol(run.f)), input=run.pw, executor=isnothing(run.ex) ? missing : String(Symbol(run.ex)), basesize=isnothing(run.basesize) ? missing : run.basesize, 
+        ex_name = isnothing(run.ex) ? missing : string(typeof(run.ex).name.name)
+        push!(bench_df, (func=String(Symbol(run.f)), input=run.pw, executor=ex_name, basesize=isnothing(run.basesize) ? missing : run.basesize, 
                 n_threads=nthreads(), memory=suite.memory))
         CSV.write(bench_df_file_name, bench_df)
     end
